@@ -1,0 +1,82 @@
+/* ========== Carte atelier (dashboard) ========== */
+/* Carte compacte : titre, date, statut avec bordures colorées selon le statut */
+
+.carte-atelier {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  border-left: 4px solid #667eea;
+}
+
+.icone-carte-atelier {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.carte-atelier:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.titre-atelier {
+  margin: 0 0 0.75rem 0;
+  color: #1a202c;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.date-atelier {
+  margin: 0 0 1rem 0;
+  color: #718096;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icone-date-atelier {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.statut-atelier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.icone-statut-atelier {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.statut-en-cours {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statut-termine {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statut-a-venir {
+  background: #dbeafe;
+  color: #1e40af;
+}

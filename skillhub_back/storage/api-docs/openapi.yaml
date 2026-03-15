@@ -1,0 +1,392 @@
+openapi: 3.0.0
+info:
+  title: 'SkillHub API'
+  description: 'API REST SkillHub - Formations et JWT'
+  version: '1.0'
+servers:
+  -
+    url: /api
+    description: API
+paths:
+  /auth/inscription:
+    post:
+      tags:
+        - Auth
+      summary: Inscription
+      description: "Inscription d'un nouvel utilisateur."
+      operationId: f2d03426fa2606c0b7bfcdb4b9e9e578
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - mot_de_passe
+                - nom
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                mot_de_passe:
+                  type: string
+                  minLength: 6
+                nom:
+                  type: string
+                  maxLength: 100
+                prenom:
+                  type: string
+                  maxLength: 100
+                role:
+                  type: string
+                  enum:
+                    - participant
+                    - formateur
+              type: object
+      responses:
+        201:
+          description: 'Utilisateur créé'
+        422:
+          description: 'Erreur de validation'
+  /auth/connexion:
+    post:
+      tags:
+        - Auth
+      summary: Connexion
+      description: Connexion.
+      operationId: 18af88b9c23de450cabcec8616eee63f
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - mot_de_passe
+              properties:
+                email:
+                  type: string
+                  format: email
+                mot_de_passe:
+                  type: string
+              type: object
+      responses:
+        200:
+          description: 'Connexion réussie - retourne token JWT'
+        401:
+          description: 'Identifiants incorrects'
+        422:
+          description: 'Erreur de validation'
+  /auth/deconnexion:
+    post:
+      tags:
+        - Auth
+      summary: Déconnexion
+      description: 'Déconnexion (invalide le token).'
+      operationId: acfbba3f95e35e0406e164ac0b6f44c8
+      responses:
+        200:
+          description: 'Déconnexion réussie'
+      security:
+        -
+          bearerAuth: []
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: 'Utilisateur connecté'
+      description: 'Utilisateur connecté.'
+      operationId: 7edae2cdbaafc10dff8c9c4198b320a2
+      responses:
+        200:
+          description: 'Données utilisateur'
+        401:
+          description: 'Non authentifié'
+      security:
+        -
+          bearerAuth: []
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: 'Rafraîchir le token'
+      description: 'Rafraîchir le token.'
+      operationId: e7ab7446393758bb71fd1946a349e500
+      responses:
+        200:
+          description: 'Nouveau token'
+        401:
+          description: 'Token invalide ou expiré'
+      security:
+        -
+          bearerAuth: []
+  /categories:
+    get:
+      tags:
+        - Catégories
+      summary: 'Liste des catégories'
+      description: 'Liste des catégories triées par libellé.'
+      operationId: 481e8c711678066046366a908b67f02c
+      responses:
+        200:
+          description: 'Liste des catégories de formations'
+  /formations:
+    get:
+      tags:
+        - Formations
+      summary: 'Liste des formations'
+      description: 'Liste des formations (paginée, avec filtres optionnels).'
+      operationId: 08d9ad64d2c3531551dd39bc13cebcf8
+      parameters:
+        -
+          name: id_formateur
+          in: query
+          description: 'Filtrer par formateur'
+          schema:
+            type: integer
+        -
+          name: id_categorie
+          in: query
+          description: 'Filtrer par catégorie'
+          schema:
+            type: integer
+        -
+          name: statut
+          in: query
+          description: 'Filtrer par statut'
+          schema:
+            type: string
+            enum:
+              - 'En Cours'
+              - Terminé
+        -
+          name: page
+          in: query
+          description: 'Numéro de page (défaut: 1)'
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Nombre par page (défaut: 15, max: 50)'
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Liste paginée des formations'
+          content:
+            application/json:
+              schema:
+                properties:
+                  formations:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      last_page:
+                        type: integer
+                        example: 5
+                      per_page:
+                        type: integer
+                        example: 15
+                      total:
+                        type: integer
+                        example: 73
+                    type: object
+                type: object
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - Formations
+      summary: 'Créer une formation'
+      description: "Créer une formation.\nPayload : title, description, price, duration, level (obligatoires), id_categorie (optionnel), image (optionnel en multipart).\nL'id_formateur est récupéré via l'utilisateur authentifié ; ne jamais l'envoyer depuis le front."
+      operationId: 291e7cfc63cd50d6f5edc61cbdc379d4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - title
+                - description
+                - price
+                - duration
+                - level
+              properties:
+                title:
+                  type: string
+                  example: 'Introduction à React'
+                  maxLength: 200
+                description:
+                  type: string
+                  example: 'Apprenez les bases de React.'
+                  maxLength: 2000
+                price:
+                  type: number
+                  example: 199.99
+                  minimum: 0
+                duration:
+                  type: number
+                  example: 24
+                  minimum: 0
+                level:
+                  type: string
+                  example: beginner
+                  enum:
+                    - beginner
+                    - intermediate
+                    - advanced
+                id_categorie:
+                  description: 'Optionnel ; si absent, première catégorie utilisée'
+                  type: integer
+                  nullable: true
+              type: object
+          multipart/form-data:
+            schema:
+              required:
+                - title
+                - description
+                - price
+                - duration
+                - level
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+                  maxLength: 2000
+                price:
+                  type: number
+                  minimum: 0
+                duration:
+                  type: number
+                  minimum: 0
+                level:
+                  type: string
+                  enum:
+                    - beginner
+                    - intermediate
+                    - advanced
+                id_categorie:
+                  type: integer
+                  nullable: true
+                image:
+                  description: 'Image optionnelle (jpeg, png, jpg, gif, webp, max 2 Mo)'
+                  type: string
+                  format: binary
+              type: object
+      responses:
+        201:
+          description: 'Formation créée avec succès'
+        401:
+          description: 'Token absent'
+        403:
+          description: 'Token invalide ou accès réservé aux formateurs'
+        422:
+          description: 'Erreur de validation'
+      security:
+        -
+          bearerAuth: []
+  '/formations/{id}':
+    put:
+      tags:
+        - Formations
+      summary: 'Modifier une formation'
+      description: "Modifier une formation (PUT JSON ou POST multipart si image).\nRéponse alignée sur store : formation avec title, description, price, duration, level."
+      operationId: 348dcdbd4f42880e43beea9681df4c53
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                id_categorie:
+                  type: integer
+                nom:
+                  type: string
+                description:
+                  type: string
+                  maxLength: 2000
+                duree_heures:
+                  type: number
+                prix:
+                  type: number
+                level:
+                  type: string
+                  enum:
+                    - beginner
+                    - intermediate
+                    - advanced
+                statut:
+                  type: string
+                  enum:
+                    - 'En Cours'
+                    - Terminé
+              type: object
+      responses:
+        200:
+          description: 'Formation mise à jour (réponse enrichie comme store)'
+        403:
+          description: 'Formation appartenant à un autre formateur'
+        404:
+          description: 'Formation introuvable'
+        422:
+          description: 'Erreur de validation'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Formations
+      summary: 'Supprimer une formation'
+      description: 'Supprimer une formation.'
+      operationId: 4603cdad10f7d3226ec580606d770b5f
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'Formation supprimée'
+        403:
+          description: 'Formation appartenant à un autre formateur'
+        404:
+          description: 'Formation introuvable'
+      security:
+        -
+          bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      bearerFormat: JWT
+      scheme: bearer
+tags:
+  -
+    name: Auth
+    description: Auth
+  -
+    name: Catégories
+    description: Catégories
+  -
+    name: Formations
+    description: Formations

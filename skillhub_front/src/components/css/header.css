@@ -1,0 +1,72 @@
+/* ========== En-tête / barre de navigation SkillHub ========== */
+/* Navbar fixe, liens centrés, bouton déconnexion à droite */
+
+.en-tete-skillhub {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.en-tete-skillhub .navbar {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  padding: 0.75rem 0;
+}
+
+.en-tete-skillhub .navbar-brand {
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  color: #fff !important;
+}
+
+.en-tete-skillhub .nav-link {
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.375rem;
+  color: rgba(255, 255, 255, 0.9) !important;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.en-tete-skillhub .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff !important;
+}
+
+.en-tete-skillhub .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.en-tete-skillhub .navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.2);
+}
+
+.en-tete-skillhub .navbar-collapse {
+  position: relative;
+  justify-content: flex-end;
+}
+
+.en-tete-skillhub .nav-centre {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.btn-deconnexion {
+  background-color: #dc2626;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  color: #fff;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.btn-deconnexion:hover {
+  background-color: #b91c1c;
+  color: #fff;
+}

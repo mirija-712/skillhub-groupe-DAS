@@ -1,0 +1,41 @@
+/* ========== Page Inscription ========== */
+/* Réutilise les styles de login.css ; spécificités : conteneur plus large, grille prénom/nom */
+
+.page-auth .conteneur-auth {
+  max-width: 480px;
+}
+
+.ligne-auth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.select-auth {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: var(--auth-text, #0f172a);
+  background: #fff;
+  border: 1px solid var(--auth-border, #e2e8f0);
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.select-auth:hover {
+  border-color: #cbd5e1;
+}
+
+.select-auth:focus {
+  outline: none;
+  border-color: var(--auth-focus, #3b82f6);
+  box-shadow: 0 0 0 3px var(--auth-focus-ring, rgba(59, 130, 246, 0.25));
+}
+
+@media (max-width: 480px) {
+  .ligne-auth {
+    grid-template-columns: 1fr;
+  }
+}

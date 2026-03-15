@@ -1,0 +1,19 @@
+/* ========== Layout principal de l'application ========== */
+/* Reset et structure flex pour le contenu principal */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Conteneur principal en colonne (header + main) */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+}

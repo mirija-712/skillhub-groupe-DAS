@@ -1,0 +1,177 @@
+/* ========== Accueil - Styles gérés entièrement en CSS ========== */
+
+/* Conteneur principal */
+.tableau-bord-principal {
+  min-height: calc(100vh - 70px);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0 3rem;
+}
+
+.conteneur-accueil {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+.titre-tableau-bord {
+  color: #1a202c;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.actions-accueil {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.bouton-ajouter-atelier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #42e326;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+  box-shadow: 0 2px 8px rgba(10, 135, 19, 0.3);
+}
+
+.bouton-ajouter-atelier:hover {
+  color: #fff;
+  background: #187f12;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 13, 0.4);
+}
+
+.bouton-ajouter-atelier:active {
+  transform: translateY(0);
+}
+
+/* Section des statistiques - grille 3 colonnes */
+.section-statistiques {
+  margin-bottom: 3rem;
+}
+
+.grille-statistiques {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .grille-statistiques {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.colonne-statistique {
+  min-width: 0;
+}
+
+.carte-statistique {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+}
+
+.carte-statistique:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+.icone-stat {
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.icone-stat img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.carte-stat-total .icone-stat {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.carte-stat-a-venir .icone-stat {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.carte-stat-termines .icone-stat {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.contenu-stat {
+  flex: 1;
+}
+
+.libelle-stat {
+  margin: 0 0 0.5rem 0;
+  color: #718096;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.valeur-stat {
+  margin: 0;
+  color: #1a202c;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+/* Section des ateliers récents */
+.section-ateliers-recents {
+  margin-top: 3rem;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
+
+.titre-section {
+  color: #1a202c;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icone-titre-section {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.grille-ateliers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  contain: layout;
+}

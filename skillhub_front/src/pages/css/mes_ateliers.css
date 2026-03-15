@@ -1,0 +1,300 @@
+/* Mes ateliers - Barre filtre compacte */
+.barre-filtre-compacte {
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.champ-filtre-input {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.champ-filtre-input:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 102, 255, 0.15);
+}
+
+.bouton-filtre {
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: #0066ff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.bouton-filtre:hover {
+  background: #0052cc;
+}
+
+.main-espace-formations {
+  flex: 1;
+  width: 100%;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 50%, #dbeafe 100%);
+  padding: 3rem 0 4rem;
+  min-height: calc(100vh - 70px);
+}
+
+.main-espace-formations .titre-page {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.03em;
+}
+
+.main-espace-formations .sous-titre-page {
+  font-size: 1.25rem;
+  color: #64748b;
+  margin-bottom: 2.5rem;
+  font-weight: 500;
+}
+
+/* Grille des formations - Design moderne et compact */
+.carte-formation {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+}
+
+.carte-formation:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+  border-color: #cbd5e1;
+}
+
+.conteneur-image-formation {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  position: relative;
+}
+
+.image-formation {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.carte-formation:hover .image-formation {
+  transform: scale(1.08);
+}
+
+/* Badge niveau sur l'image (coin supérieur droit) */
+.badge-niveau-carte {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.badge-niveau-carte.niveau-beginner {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+.badge-niveau-carte.niveau-intermediate {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+.badge-niveau-carte.niveau-advanced {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+.badge-niveau-carte.niveau-default {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+/* Prix en overlay en bas de l'image */
+.carte-prix-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.contenu-formation {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.contenu-formation .bouton-formation {
+  margin-top: auto;
+}
+
+/* Badge domaine au-dessus du titre */
+.badge-domaine-carte {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.25rem 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 6px;
+}
+
+.nom-formation {
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.description-formation-carte {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Bloc d'informations en tableau 2 colonnes avec lignes de séparation */
+.infos-formation {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.infos-formation p {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+/* Enlever la bordure droite pour les colonnes de droite */
+.infos-formation p:nth-child(even) {
+  border-right: none;
+}
+
+/* Enlever la bordure du bas pour la dernière ligne */
+.infos-formation p:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.infos-formation p:hover {
+  background: #f8fafc;
+}
+
+.infos-formation .libelle {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.infos-formation .valeur {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.infos-formation .statut .valeur {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 480px) {
+  .infos-formation {
+    grid-template-columns: 1fr;
+  }
+  
+  .infos-formation p {
+    border-right: none;
+  }
+  
+  .infos-formation p:last-child {
+    border-bottom: none;
+  }
+  
+  .infos-formation p:nth-last-child(-n+2) {
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+.bouton-formation {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bouton-formation:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.bouton-formation:active {
+  transform: translateY(0);
+}
