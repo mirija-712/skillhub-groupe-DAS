@@ -1,16 +1,19 @@
-// Définition de toutes les routes de l'app.
-// / et /inscription = pas de garde. Les autres sont enveloppées dans RouteFormateur pour vérifier qu'on est bien formateur.
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import Home from "./pages/home";
+import Accueil from "./pages/Accueil";
 import Login from "./connexion/login";
 import Inscription from "./connexion/inscription";
+import FormationsCatalogue from "./pages/FormationsCatalogue";
+import FormationDetail from "./pages/FormationDetail";
+import DashboardApprenant from "./pages/DashboardApprenant";
+import Apprendre from "./pages/Apprendre";
 import RouteFormateur from "./components/RouteFormateur";
+import RouteApprenant from "./components/RouteApprenant";
 import "./App.css";
 
-// Lazy : on charge ces pages seulement quand on navigue dessus, ça réduit le premier chargement.
+const Home = lazy(() => import("./pages/home"));
 const Mes_Ateliers = lazy(() => import("./pages/mes_ateliers"));
 const Gestion_Ateliers = lazy(() => import("./pages/gestion_ateliers"));
 
@@ -18,11 +21,31 @@ function App() {
   return (
     <Suspense fallback={<div className="d-flex justify-content-center align-items-center min-vh-100">Chargement...</div>}>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Accueil />} />
+        <Route path="/connexion" element={<Login />} />
         <Route path="/inscription" element={<Inscription />} />
-        {/* Routes protégées : RouteFormateur appelle /auth/me et redirige vers / si pas formateur */}
+        <Route path="/formations" element={<FormationsCatalogue />} />
+        <Route path="/formation/:id" element={<FormationDetail />} />
+
         <Route
-          path="/dashboard"
+          path="/dashboard/apprenant"
+          element={
+            <RouteApprenant>
+              <DashboardApprenant />
+            </RouteApprenant>
+          }
+        />
+        <Route
+          path="/apprendre/:id"
+          element={
+            <RouteApprenant>
+              <Apprendre />
+            </RouteApprenant>
+          }
+        />
+
+        <Route
+          path="/dashboard/formateur"
           element={
             <RouteFormateur>
               <Home />

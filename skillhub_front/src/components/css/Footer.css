@@ -1,0 +1,125 @@
+.footer-skillhub {
+  background: #111;
+  color: #ddd;
+  padding: 60px 0 25px;
+  margin-top: 60px;
+}
+
+.footer-skillhub .footer-container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: space-between;
+}
+
+.footer-skillhub .footer-col {
+  width: 250px;
+  min-width: 180px;
+}
+
+.footer-skillhub .footer-col h3,
+.footer-skillhub .footer-col h4 {
+  color: #fff;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.footer-skillhub .footer-col h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-skillhub .footer-col .logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--skillhub-blue);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.footer-skillhub .footer-col p {
+  color: #ccc;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.footer-skillhub .footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-skillhub .footer-col ul li {
+  margin-bottom: 8px;
+}
+
+.footer-skillhub .footer-col ul li a {
+  color: #ccc;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.footer-skillhub .footer-col ul li a:hover {
+  color: var(--skillhub-blue);
+}
+
+.footer-skillhub .socials {
+  display: flex;
+  gap: 12px;
+}
+
+.footer-skillhub .socials a {
+  width: 36px;
+  height: 36px;
+  background: #222;
+  color: #ccc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.footer-skillhub .socials a:hover {
+  background: var(--skillhub-blue);
+  color: #fff;
+}
+
+.footer-skillhub .footer-bottom {
+  text-align: center;
+  padding-top: 15px;
+  margin-top: 40px;
+  border-top: 1px solid #222;
+}
+
+.footer-skillhub .footer-bottom p {
+  color: #777;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .footer-skillhub .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-skillhub .footer-col {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .footer-skillhub .footer-col h3 {
+    justify-content: center;
+  }
+}

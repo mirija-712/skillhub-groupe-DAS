@@ -1,0 +1,82 @@
+.page-apprendre {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 2rem 1rem 3rem;
+}
+
+.container-apprendre {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.apprendre-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.apprendre-description {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.apprendre-progression {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.apprendre-progression h2,
+.apprendre-modules h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.progression-control {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progression-control input[type="range"] {
+  flex: 1;
+  max-width: 300px;
+}
+
+.liste-modules-apprendre {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.module-apprendre {
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.module-apprendre h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.75rem;
+}
+
+.module-contenu {
+  color: #475569;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.module-video a,
+.module-ressource a {
+  color: #2563eb;
+  text-decoration: underline;
+}

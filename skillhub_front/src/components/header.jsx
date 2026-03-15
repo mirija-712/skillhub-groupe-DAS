@@ -24,8 +24,8 @@ function Header() {
         <nav className="navbar navbar-expand-lg navbar-dark" aria-label="Navigation principale">
           <div className="container">
             {/* Logo : redirige vers dashboard (formateur) ou Mes Ateliers selon le rôle */}
-            <Link className="navbar-brand" to={estFormateur ? "/dashboard" : "/Mes_Ateliers"}>
-              SkillHub EC
+            <Link className="navbar-brand" to={estFormateur ? "/dashboard/formateur" : "/dashboard/apprenant"}>
+              SkillHub
             </Link>
             <button
               className="navbar-toggler"
@@ -41,13 +41,13 @@ function Header() {
             <div className="collapse navbar-collapse" id="navbarNav">
               <ul className="navbar-nav nav-centre">
                 <li className="nav-item">
-                  <Link className="nav-link" to="/dashboard">
-                    Dashboard
+                  <Link className="nav-link" to="/dashboard/formateur">
+                    Tableau de bord
                   </Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/Mes_Ateliers">
-                    Mes Ateliers
+                    Mes formations
                   </Link>
                 </li>
                 <li className="nav-item">

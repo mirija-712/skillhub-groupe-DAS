@@ -20,11 +20,24 @@ function getAuthHeaders(json = true) {
 }
 
 export const formationsApi = {
-  // Liste paginée. params peut contenir id_formateur, page, per_page, etc. On retourne formations + meta pour la pagination.
+  // Liste paginée. Envoie le token si présent (formateur voit ses formations par défaut si pas de params).
   async getFormations(params = {}) {
     const qs = new URLSearchParams(params).toString();
     const url = `${API_URL}/formations${qs ? `?${qs}` : ""}`;
     const res = await fetch(url, { headers: getAuthHeaders() });
+    const json = await parseJsonResponse(res);
+    if (!res.ok) throw { status: res.status, ...json };
+    return {
+      formations: json.formations ?? [],
+      meta: json.meta ?? null,
+    };
+  },
+
+  // Catalogue public : toutes les formations (sans token pour éviter le filtre formateur).
+  async getFormationsCatalogue(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const url = `${API_URL}/formations${qs ? `?${qs}` : ""}`;
+    const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
     const json = await parseJsonResponse(res);
     if (!res.ok) throw { status: res.status, ...json };
     return {

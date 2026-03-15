@@ -72,4 +72,49 @@ class FormationControllerTest extends TestCase
             'id_formateur' => $this->formateur->id,
         ]);
     }
+
+    /**
+     * Un apprenant ne peut pas créer de formation (403).
+     */
+    public function test_apprenant_cannot_create_formation(): void
+    {
+        $apprenant = Utilisateur::factory()->participant()->create();
+        $token = auth('api')->login($apprenant);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/formations', [
+                'title' => 'Ma formation',
+                'description' => 'Description',
+                'price' => 0,
+                'duration' => 10,
+                'level' => 'beginner',
+            ]);
+
+        $response->assertStatus(403);
+        $this->assertDatabaseMissing('formations', ['nom' => 'Ma formation']);
+    }
+
+    /**
+     * Un formateur ne peut modifier que ses propres formations.
+     */
+    public function test_formateur_cannot_update_another_formateur_formation(): void
+    {
+        $autreFormateur = Utilisateur::factory()->formateur()->create();
+        $categorie = CategorieFormation::first();
+        $formation = \App\Models\Formation::factory()->create([
+            'id_formateur' => $autreFormateur->id,
+            'id_categorie' => $categorie->id,
+        ]);
+        $token = auth('api')->login($this->formateur);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->putJson('/api/formations/' . $formation->id, [
+                'nom' => 'Pirate',
+                'description' => 'Modification non autorisée',
+            ]);
+
+        $response->assertStatus(403);
+        $formation->refresh();
+        $this->assertNotEquals('Pirate', $formation->nom);
+    }
 }

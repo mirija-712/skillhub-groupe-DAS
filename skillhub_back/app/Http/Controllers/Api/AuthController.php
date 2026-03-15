@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 
 /**
  * Tout ce qui touche à l'auth : inscription, connexion, déconnexion, récupérer l'utilisateur connecté, refresh token.
- * À la connexion on vérifie le rôle : si c'est un participant on renvoie 403 (seuls les formateurs peuvent se connecter).
+ * Connexion ouverte aux apprenants (participant) et formateurs.
  *
  * @OA\OpenApi(
  *     @OA\Info(title="SkillHub API", version="1.0", description="API REST SkillHub - Formations et JWT"),
@@ -117,14 +117,6 @@ class AuthController extends Controller
             }
 
             $utilisateur = auth('api')->user();
-            // Accès réservé aux formateurs : les participants ne peuvent pas se connecter à cette app
-            if ($utilisateur->role !== 'formateur') {
-                auth('api')->logout();
-
-                return response()->json([
-                    'message' => 'Accès réservé aux formateurs uniquement.',
-                ], 403);
-            }
 
             return response()->json([
                 'message' => 'Connexion réussie',

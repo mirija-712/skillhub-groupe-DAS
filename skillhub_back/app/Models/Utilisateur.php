@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -56,5 +57,20 @@ class Utilisateur extends Authenticatable implements JWTSubject
     public function getAuthPassword()
     {
         return $this->mot_de_passe;
+    }
+
+    public function inscriptions(): HasMany
+    {
+        return $this->hasMany(Inscription::class);
+    }
+
+    public function isFormateur(): bool
+    {
+        return $this->role === 'formateur';
+    }
+
+    public function isApprenant(): bool
+    {
+        return $this->role === 'participant';
     }
 }

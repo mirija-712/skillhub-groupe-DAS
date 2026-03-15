@@ -54,7 +54,7 @@ function Home() {
 
           <div className="actions-accueil">
             <Link to="/Gestion_Ateliers" className="bouton-ajouter-atelier">
-              + Ajouter atelier
+              + Créer une formation
             </Link>
           </div>
 

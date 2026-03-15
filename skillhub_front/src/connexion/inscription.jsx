@@ -1,7 +1,8 @@
-// Inscription : on envoie nom, prenom (optionnel), email, mot_de_passe. role est toujours "formateur".
-// Après succès on affiche un message et on redirige vers la page de connexion au bout de 2 secondes.
+// Inscription avec choix du rôle - style SkillHub1.0
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import NavbarPublic from "../components/NavbarPublic";
+import Footer from "../components/Footer";
 import { authApi } from "../api/auth";
 import { getMessageErreurApi } from "../api/utils";
 import "./css/login.css";
@@ -14,7 +15,7 @@ function Inscription() {
     mot_de_passe: "",
     nom: "",
     prenom: "",
-    role: "formateur",
+    role: "participant",
   });
   const [erreur, setErreur] = useState("");
   const [succes, setSucces] = useState("");
@@ -43,7 +44,7 @@ function Inscription() {
         mot_de_passe: "",
         nom: "",
         prenom: "",
-        role: "formateur",
+        role: formData.role,
       });
       setTimeout(() => {
         navigate("/");
@@ -61,8 +62,10 @@ function Inscription() {
   };
 
   return (
-    <main className="page-auth">
-      <div className="conteneur-auth">
+    <>
+      <NavbarPublic />
+      <main className="page-auth">
+        <div className="conteneur-auth">
         <div className="carte-auth">
           <h1 className="titre-auth">Inscription</h1>
           <p className="sous-titre-auth">Créez votre compte SkillHub</p>
@@ -118,6 +121,23 @@ function Inscription() {
             </div>
 
             <div className="champ-auth">
+              <label htmlFor="inscription-role" className="libelle-auth">
+                Je suis
+              </label>
+              <select
+                id="inscription-role"
+                name="role"
+                className="champ-saisie-auth"
+                value={formData.role}
+                onChange={handleChange}
+                required
+              >
+                <option value="participant">Apprenant</option>
+                <option value="formateur">Formateur</option>
+              </select>
+            </div>
+
+            <div className="champ-auth">
               <label
                 htmlFor="inscription-mot-de-passe"
                 className="libelle-auth"
@@ -150,14 +170,16 @@ function Inscription() {
 
             <p className="lien-bas-auth">
               Déjà un compte ?{" "}
-              <Link to="/" className="lien-auth">
+              <Link to="/connexion" className="lien-auth">
                 Se connecter
               </Link>
             </p>
           </form>
         </div>
       </div>
-    </main>
+      </main>
+      <Footer />
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 # SkillHub — Backend (Laravel)
 
-Backend API REST du projet SkillHub. Authentification JWT, utilisateurs (formateurs / participants), catégories de formations et formations (CRUD, upload d’images). **Seuls les formateurs peuvent se connecter** ; les participants reçoivent 403 à la connexion.
+Backend API REST du projet SkillHub. Authentification JWT, rôles **apprenant** (participant) et **formateur**, catégories, formations (CRUD, upload d’images), **modules** (par formation), **inscriptions** (suivi de formations), **nombre de vues**, et **historisation** (ActivityLogService, logs structurés).
 
 ---
 
@@ -106,8 +106,8 @@ Toutes les routes sont préfixées par **`/api`**.
 
 ### Authentification (`/api/auth`)
 
-- **POST** `/api/auth/inscription` — Inscription formateurs. Corps : `email`, `mot_de_passe`, `nom`, `prenom` (optionnel), `role: "formateur"`.
-- **POST** `/api/auth/connexion` — Connexion. Retourne JWT. Participants → 403. Corps : `email`, `mot_de_passe`.
+- **POST** `/api/auth/inscription` — Inscription. Corps : `email`, `mot_de_passe`, `nom`, `prenom` (optionnel), `role` : `"participant"` (apprenant) ou `"formateur"`.
+- **POST** `/api/auth/connexion` — Connexion. Retourne JWT. Corps : `email`, `mot_de_passe`. Apprenants et formateurs peuvent se connecter.
 - **POST** `/api/auth/deconnexion` — Invalidation du token. En-tête : `Authorization: Bearer <token>`.
 - **GET** `/api/auth/me` — Utilisateur connecté. En-tête : `Authorization: Bearer <token>`.
 - **POST** `/api/auth/refresh` — Rafraîchit le token.
@@ -116,13 +116,12 @@ Toutes les routes sont préfixées par **`/api`**.
 
 - **GET** `/api/categories` — Liste des catégories. Pas d’authentification.
 
-### Formations (authentification requise)
+### Formations (liste et détail publics)
 
-- **GET** `/api/formations` — Liste paginée (15 par page, max 50). Query : `id_formateur`, `id_categorie`, `statut`, `page`, `per_page`.  
-  Réponse : `{ formations: [...], meta: { current_page, last_page, per_page, total } }`.  
-  En-tête : `Authorization: Bearer <token>`.
+- **GET** `/api/formations` — Liste paginée. Query : `recherche`, `id_categorie`, `level`, `id_formateur`, `statut`, `page`, `per_page`. Sans token = toutes les formations ; avec token formateur et sans `id_formateur` = ses formations.
+- **GET** `/api/formations/{id}` — Détail d’une formation (avec modules). Incrémente le nombre de vues.
 
-- **GET** `/api/formations/{id}` — Détail d’une formation.
+### Formations (création / modification / suppression, formateur uniquement)
 
 - **POST** `/api/formations` — Création (formateurs uniquement). `id_formateur` pris de l’utilisateur connecté.  
   Corps (JSON) : `title`, `description`, `price`, `duration`, `level` (obligatoires), `id_categorie` (optionnel).  
@@ -134,7 +133,21 @@ Toutes les routes sont préfixées par **`/api`**.
 
 - **DELETE** `/api/formations/{id}` — Suppression (et suppression de l’image sur disque si présente).
 
-Images : `storage/app/public/formations/`. Ancienne image supprimée lors d’un remplacement ou d’une suppression.
+### Modules (formateur propriétaire de la formation)
+
+- **GET** `/api/formations/{formationId}/modules` — Liste des modules (ordre).
+- **POST** `/api/formations/{formationId}/modules` — Ajouter un module (`titre`, `contenu`, `type_contenu`, `ordre`).
+- **PUT** `/api/modules/{id}` — Modifier un module.
+- **DELETE** `/api/modules/{id}` — Supprimer un module.
+
+### Inscriptions (apprenant)
+
+- **POST** `/api/formations/{formationId}/inscription` — S’inscrire à une formation.
+- **DELETE** `/api/formations/{formationId}/inscription` — Se désinscrire.
+- **GET** `/api/apprenant/formations` — Formations suivies (avec progression).
+- **PUT** `/api/formations/{formationId}/progression` — Mettre à jour la progression (0–100).
+
+Images : `storage/app/public/formations/`. Historisation : `App\Services\ActivityLogService` (consultation, inscription, création, modification, suppression de formations).
 
 ---
 
@@ -142,8 +155,9 @@ Images : `storage/app/public/formations/`. Ancienne image supprimée lors d’un
 
 - **utilisateurs** : `id`, `email`, `mot_de_passe`, `nom`, `prenom` (nullable), `role` (participant, formateur), `created_at`, `updated_at`.
 - **categorie_formations** : `id`, `libelle`, `created_at`, `updated_at`.
-- **formations** : `id`, `id_formateur`, `id_categorie`, `nom`, `description` (nullable), `duree_heures`, `prix`, `level` (nullable, beginner/intermediate/advanced), `statut`, `image_url`, `created_at`, `updated_at`.  
-  Statuts : `En Cours`, `Terminé`, `À venir`.
+- **formations** : id, id_formateur, id_categorie, nom, description, duree_heures, prix, level, statut, image_url, **nombre_de_vues**, created_at, updated_at.
+- **modules** : id, formation_id, titre, contenu, type_contenu, url_ressource, ordre.
+- **inscriptions** : id, utilisateur_id, formation_id, progression, date_inscription, created_at.
 
 ---
 
@@ -160,7 +174,7 @@ Tests avec **SQLite en mémoire** (`phpunit.xml`).
 - `php artisan test` — Tous les tests.
 - `php artisan test --filter FormationControllerTest` — Tests formations uniquement.
 
-**FormationControllerTest** : requête sans token → 401 ; requête avec formateur valide et données valides → 201 et formation créée en base.
+**FormationControllerTest** : 401 sans token ; 201 avec formateur valide ; apprenant ne peut pas créer de formation (403) ; formateur ne peut pas modifier la formation d’un autre (403). **AuthTest** : connexion valide (formateur et apprenant), 401 identifiants incorrects, 401 route protégée sans token.
 
 ---
 

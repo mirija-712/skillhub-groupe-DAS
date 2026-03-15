@@ -1,7 +1,8 @@
-// Page de connexion : email + mot de passe. Si OK on stocke le token et l'utilisateur puis on redirige vers le dashboard.
-// Le back renvoie 403 si c'est un participant (seuls les formateurs peuvent se connecter).
+// Page de connexion - style SkillHub1.0
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import NavbarPublic from "../components/NavbarPublic";
+import Footer from "../components/Footer";
 import { authApi } from "../api/auth";
 import { getMessageErreurApi } from "../api/utils";
 import "./css/login.css";
@@ -30,7 +31,8 @@ function Login() {
       const res = await authApi.connexion(formData);
       authApi.setToken(res.token);
       authApi.setUtilisateur(res.utilisateur);
-      navigate("/dashboard"); // Redirection vers le tableau de bord après connexion réussie
+      const dashboard = res.utilisateur?.role === "formateur" ? "/dashboard/formateur" : "/dashboard/apprenant";
+      navigate(dashboard);
     } catch (err) {
       setErreur(getMessageErreurApi(err, "Erreur de connexion. Vérifiez que le backend est démarré."));
     } finally {
@@ -39,7 +41,9 @@ function Login() {
   };
 
   return (
-    <main className="page-auth">
+    <>
+      <NavbarPublic />
+      <main className="page-auth">
         <div className="conteneur-auth">
           <div className="carte-auth">
             <h1 className="titre-auth">Connexion</h1>
@@ -95,6 +99,8 @@ function Login() {
           </div>
         </div>
       </main>
+      <Footer />
+    </>
   );
 }
 

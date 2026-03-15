@@ -1,0 +1,372 @@
+/* Page Accueil - style SkillHub1.0 */
+
+/* ========== Hero intro (image de fond + overlay) ========== */
+.intro-skillhub {
+  width: 100%;
+  padding: 200px 20px;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, var(--skillhub-blue-dark) 0%, var(--skillhub-blue) 50%, #0044aa 100%);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.intro-skillhub::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.intro-skillhub .intro-container {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+}
+
+.intro-skillhub h1 {
+  font-size: 42px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.intro-skillhub .intro-text {
+  font-size: 20px;
+  line-height: 1.6;
+  margin-bottom: 35px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.intro-skillhub .intro-btn {
+  padding: 14px 30px;
+  background: var(--skillhub-orange);
+  color: #fff;
+  font-size: 18px;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: 0.3s ease;
+  display: inline-block;
+}
+
+.intro-skillhub .intro-btn:hover {
+  background: var(--skillhub-orange-hover);
+  color: #fff;
+}
+
+/* ========== Section Comment s'inscrire ========== */
+.ma-section-skillhub {
+  width: 100%;
+  max-width: 1200px;
+  margin: 70px auto;
+  padding: 40px 20px 80px;
+}
+
+.ma-section-skillhub > h2 {
+  flex: 0 0 100%;
+  text-align: center;
+  margin-bottom: 40px;
+  color: var(--skillhub-blue-dark);
+}
+
+.ma-section-skillhub .ma-section-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.ma-section-container {
+  flex: 1;
+  min-width: 260px;
+  max-width: 340px;
+  background: #fff;
+  padding: 30px 25px;
+  border-radius: var(--skillhub-radius);
+  box-shadow: var(--skillhub-card-shadow);
+  text-align: center;
+}
+
+.ma-section-container .step-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--skillhub-blue) 0%, var(--skillhub-blue-dark) 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.ma-section-container h3 {
+  color: var(--skillhub-orange-hover);
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+}
+
+.ma-section-container p {
+  color: #555;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* ========== Split screen Élève / Formateur ========== */
+.split-screen-skillhub {
+  display: flex;
+  min-height: 90vh;
+  width: 100%;
+}
+
+.split-screen-skillhub .left-side,
+.split-screen-skillhub .right-side {
+  width: 100%;
+  min-height: 400px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.split-screen-skillhub .side-img {
+  width: 90%;
+  max-width: 400px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: var(--skillhub-radius);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 22px;
+  background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);
+}
+
+.split-screen-skillhub .right-side .side-img {
+  background: linear-gradient(135deg, #fff4e6 0%, #ffe0b2 100%);
+}
+
+.split-screen-skillhub .side-title {
+  font-size: 1.5rem;
+  color: var(--skillhub-blue-dark);
+  margin-bottom: 12px;
+}
+
+.split-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  background: var(--skillhub-blue);
+  color: #fff;
+  text-decoration: none;
+  transition: 0.3s;
+  display: inline-block;
+}
+
+.split-btn:hover {
+  background: var(--skillhub-blue-dark);
+  color: #fff;
+}
+
+.split-btn.trainer {
+  background: var(--skillhub-orange);
+}
+
+.split-btn.trainer:hover {
+  background: var(--skillhub-orange-hover);
+  color: #fff;
+}
+
+/* ========== Section Nos valeurs ========== */
+.cards-section-skillhub {
+  width: 90%;
+  max-width: 1200px;
+  margin: 70px auto;
+  padding: 40px 20px 80px;
+}
+
+.cards-section-skillhub > h2 {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 40px;
+  color: var(--skillhub-blue-dark);
+}
+
+.cards-section-skillhub .cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.card-skillhub {
+  flex: 1;
+  min-width: 260px;
+  max-width: 340px;
+  background: #fff;
+  padding: 32px 25px;
+  border-radius: var(--skillhub-radius);
+  box-shadow: var(--skillhub-card-shadow);
+  text-align: center;
+}
+
+.card-skillhub .card-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  background: #e8f0fe;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--skillhub-blue);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.card-skillhub h3 {
+  color: var(--skillhub-blue);
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+.card-skillhub p {
+  color: #555;
+  line-height: 1.5;
+}
+
+/* ========== Formations à la une ========== */
+.apercu-formations-accueil {
+  padding: 40px 20px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.apercu-formations-accueil h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--skillhub-blue-dark);
+}
+
+.grille-formations-accueil {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.carte-formation-accueil {
+  background: #fff;
+  border-radius: var(--skillhub-radius);
+  overflow: hidden;
+  box-shadow: var(--skillhub-card-shadow);
+  border: 1px solid #e2e8f0;
+}
+
+.carte-formation-accueil-image {
+  height: 140px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.carte-formation-accueil-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carte-formation-accueil-body {
+  padding: 1rem;
+}
+
+.carte-formation-accueil-body h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.carte-formation-accueil-body .badge-niveau {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.carte-formation-accueil-body .formateur-nom {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.carte-formation-accueil-body .btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  background: var(--skillhub-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  display: inline-block;
+  transition: 0.3s;
+}
+
+.carte-formation-accueil-body .btn:hover {
+  background: var(--skillhub-blue-dark);
+  color: #fff;
+}
+
+.centre-accueil {
+  text-align: center;
+}
+
+.centre-accueil .btn {
+  padding: 12px 28px;
+  background: var(--skillhub-orange);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 16px;
+  transition: 0.3s;
+  display: inline-block;
+}
+
+.centre-accueil .btn:hover {
+  background: var(--skillhub-orange-hover);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .split-screen-skillhub {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .intro-skillhub h1 {
+    font-size: 28px;
+  }
+
+  .intro-skillhub .intro-text {
+    font-size: 17px;
+  }
+
+  .intro-skillhub {
+    padding: 120px 16px 80px;
+  }
+}

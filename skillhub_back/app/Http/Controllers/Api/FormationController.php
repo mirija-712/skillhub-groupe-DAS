@@ -7,6 +7,8 @@ use App\Http\Requests\StoreFormationRequest;
 use App\Http\Requests\UpdateFormationRequest;
 use App\Models\CategorieFormation;
 use App\Models\Formation;
+use App\Models\Module;
+use App\Services\ActivityLogService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,23 +48,32 @@ class FormationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle']);
+        $query = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle'])
+            ->withCount('inscriptions');
 
-        // Par défaut : un formateur connecté ne voit que ses formations ; id_formateur en query permet de surcharger
         $user = auth()->user();
-        if ($user && $user->role === 'formateur' && !$request->has('id_formateur')) {
+        if ($user && $user->role === 'formateur' && ! $request->has('id_formateur')) {
             $query->where('id_formateur', $user->id);
         }
 
-        // Filtres optionnels (id_formateur, id_categorie, statut)
-        if ($request->has('id_formateur')) {
+        if ($request->filled('id_formateur')) {
             $query->where('id_formateur', $request->id_formateur);
         }
-        if ($request->has('id_categorie')) {
+        if ($request->filled('id_categorie')) {
             $query->where('id_categorie', $request->id_categorie);
         }
-        if ($request->has('statut')) {
+        if ($request->filled('statut')) {
             $query->where('statut', $request->statut);
+        }
+        if ($request->filled('level')) {
+            $query->where('level', $request->level);
+        }
+        if ($request->filled('recherche')) {
+            $term = $request->recherche;
+            $query->where(function ($q) use ($term) {
+                $q->where('nom', 'like', '%' . $term . '%')
+                    ->orWhere('description', 'like', '%' . $term . '%');
+            });
         }
 
         $paginator = $query->orderBy('id', 'desc')->paginate(
@@ -81,15 +92,23 @@ class FormationController extends Controller
     }
 
     /**
-     * Détail d'une formation (avec formateur et catégorie chargés).
+     * Détail d'une formation. Incrémente le nombre de vues à chaque consultation.
      */
     public function show(int $id): JsonResponse
     {
-        $formation = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle'])->find($id);
+        $formation = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle', 'modules'])
+            ->withCount('inscriptions')
+            ->find($id);
 
         if (! $formation) {
             return response()->json(['message' => 'Formation introuvable'], 404);
         }
+
+        $formation->increment('nombre_de_vues');
+        $formation->refresh();
+        $formation->loadCount('inscriptions');
+
+        app(ActivityLogService::class)->logCourseView(auth()->id(), (int) $id);
 
         return response()->json(['formation' => $formation]);
     }
@@ -156,7 +175,20 @@ class FormationController extends Controller
         }
 
         $formation = Formation::create($data);
-        $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle']);
+
+        for ($ordre = 1; $ordre <= 3; $ordre++) {
+            Module::create([
+                'formation_id' => $formation->id,
+                'titre' => 'Module ' . $ordre . ' – À compléter',
+                'contenu' => '',
+                'type_contenu' => 'texte',
+                'ordre' => $ordre,
+            ]);
+        }
+
+        $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle', 'modules']);
+
+        app(ActivityLogService::class)->logCourseCreation($formation->id, (int) $request->user()->id);
 
         return response()->json([
             'message' => 'Formation créée avec succès',
@@ -201,12 +233,13 @@ class FormationController extends Controller
             return response()->json(['message' => 'Formation introuvable'], 404);
         }
 
-        // Vérification : seul le formateur propriétaire peut modifier
         if ($formation->id_formateur !== (int) $request->user()->id) {
             return response()->json([
                 'message' => 'Vous ne pouvez modifier que vos propres formations.',
             ], 403);
         }
+
+        $oldValues = $formation->only(['nom', 'description', 'level', 'statut', 'duree_heures', 'prix']);
 
         try {
             $data = $request->validated();
@@ -227,6 +260,14 @@ class FormationController extends Controller
 
             $formation->update($data);
             $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle']);
+
+            $newValues = $formation->only(['nom', 'description', 'level', 'statut', 'duree_heures', 'prix']);
+            app(ActivityLogService::class)->logCourseUpdate(
+                (int) $id,
+                (int) $request->user()->id,
+                $oldValues,
+                $newValues
+            );
 
             return response()->json([
                 'message' => 'Formation mise à jour',
@@ -271,13 +312,17 @@ class FormationController extends Controller
         }
 
         try {
-            // Suppression du fichier image du disque avant suppression de l'enregistrement
+            $formationId = $formation->id;
+            $userId = (int) auth()->id();
+
             $imagePath = self::imageUrlToStoragePath($formation->image_url);
             if ($imagePath && Storage::disk('public')->exists($imagePath)) {
                 Storage::disk('public')->delete($imagePath);
             }
 
             $formation->delete();
+
+            app(ActivityLogService::class)->logCourseDeletion($formationId, $userId);
 
             return response()->json(['message' => 'Formation supprimée']);
         } catch (Exception $e) {

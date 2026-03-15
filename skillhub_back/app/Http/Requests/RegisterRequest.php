@@ -6,18 +6,17 @@ use Illuminate\Foundation\Http\FormRequest;
 
 /**
  * Validation du formulaire d'inscription. Le front envoie email, mot_de_passe, nom, prenom (optionnel), role.
- * On impose role = formateur car l'inscription est réservée aux formateurs.
+ * Le rôle peut être "participant" (apprenant) ou "formateur".
  */
 class RegisterRequest extends FormRequest
 {
-    /** Inscription ouverte à tous (pas de vérification de droit ici) */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Règles de validation : email unique, mot de passe min 6, role obligatoirement "formateur".
+     * Règles : email unique, mot de passe min 6, role = participant ou formateur.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
@@ -28,7 +27,7 @@ class RegisterRequest extends FormRequest
             'mot_de_passe' => 'required|string|min:6',
             'nom' => 'required|string|max:100',
             'prenom' => 'nullable|string|max:100',
-            'role' => 'required|in:formateur',
+            'role' => 'required|in:participant,formateur',
         ];
     }
 
@@ -50,7 +49,7 @@ class RegisterRequest extends FormRequest
             'prenom.string' => 'Le prénom doit être une chaîne de caractères.',
             'prenom.max' => 'Le prénom ne peut pas dépasser :max caractères.',
             'role.required' => 'Le rôle est requis.',
-            'role.in' => 'Seuls les formateurs peuvent s\'inscrire.',
+            'role.in' => 'Le rôle doit être Apprenant ou Formateur.',
         ];
     }
 }

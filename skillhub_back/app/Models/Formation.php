@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Modèle Formation : une formation a un formateur (utilisateur) et une catégorie.
- * En BDD on a nom, description, duree_heures, prix, level (beginner/intermediate/advanced), statut, image_url.
+ * En BDD : nom, description, duree_heures, prix, level, statut, image_url, nombre_de_vues.
  */
 class Formation extends Model
 {
@@ -16,7 +17,6 @@ class Formation extends Model
 
     protected $table = 'formations';
 
-    /** Champs assignables (création / mise à jour) */
     protected $fillable = [
         'id_formateur',
         'id_categorie',
@@ -27,6 +27,7 @@ class Formation extends Model
         'level',
         'statut',
         'image_url',
+        'nombre_de_vues',
     ];
 
     protected function casts(): array
@@ -47,5 +48,17 @@ class Formation extends Model
     public function categorie(): BelongsTo
     {
         return $this->belongsTo(CategorieFormation::class, 'id_categorie');
+    }
+
+    /** Relation : une formation a plusieurs modules (ordre) */
+    public function modules(): HasMany
+    {
+        return $this->hasMany(Module::class)->orderBy('ordre');
+    }
+
+    /** Relation : inscriptions des apprenants à cette formation */
+    public function inscriptions(): HasMany
+    {
+        return $this->hasMany(Inscription::class);
     }
 }

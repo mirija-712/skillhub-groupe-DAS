@@ -1,17 +1,15 @@
 /* ========== Page Connexion / Authentification ========== */
 /* Variables CSS pour la palette et styles du formulaire (partagés avec inscription) */
 
+/* Style SkillHub1.0 : bleu #0066ff, fond #f7f8fa */
 :root {
-  --auth-bg: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  --auth-bg: #f7f8fa;
   --auth-card-bg: #ffffff;
-  --auth-accent: #0f172a;
-  --auth-accent-hover: #1e293b;
-  --auth-accent-soft: rgba(15, 23, 42, 0.08);
-  --auth-text: #0f172a;
+  --auth-text: #333;
   --auth-text-muted: #64748b;
-  --auth-border: #e2e8f0;
-  --auth-focus: #3b82f6;
-  --auth-focus-ring: rgba(59, 130, 246, 0.25);
+  --auth-border: #ddd;
+  --auth-focus: #0066ff;
+  --auth-focus-ring: rgba(0, 102, 255, 0.15);
 }
 
 .page-auth {
@@ -111,15 +109,15 @@
 
 .bouton-auth-principal {
   color: #fff;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: #0066ff;
   border: none;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
 }
 
 .bouton-auth-principal:hover {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.35);
+  background: #004ec7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35);
 }
 
 .bouton-auth-principal:active {

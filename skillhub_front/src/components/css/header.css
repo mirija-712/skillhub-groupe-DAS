@@ -70,3 +70,17 @@
   background-color: #b91c1c;
   color: #fff;
 }
+
+.btn-inscription {
+  background-color: #16a34a !important;
+  color: #fff !important;
+  padding: 0.4rem 0.9rem !important;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-inscription:hover {
+  background-color: #15803d !important;
+  color: #fff !important;
+}

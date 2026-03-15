@@ -1,0 +1,163 @@
+/* Navbar style SkillHub1.0 */
+.navbar-skillhub {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(6px);
+  padding: 12px 0;
+  border-bottom: 1px solid #e6e6e6;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.navbar-skillhub .navbar-container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-skillhub .navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  font-size: 22px;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.navbar-skillhub .logo-text {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.navbar-skillhub .navbar-logo:hover {
+  color: #333;
+}
+
+.navbar-skillhub .logo-icon {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, var(--skillhub-blue) 0%, var(--skillhub-blue-dark) 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.navbar-skillhub .nav-list {
+  display: flex;
+  gap: 25px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.navbar-skillhub .nav-link {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.navbar-skillhub .nav-link:hover {
+  color: var(--skillhub-green);
+}
+
+.navbar-skillhub .btn-profile {
+  padding: 8px 20px;
+  border: 1px solid var(--skillhub-blue);
+  background: transparent;
+  color: var(--skillhub-blue);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.navbar-skillhub .btn-profile:hover {
+  background: var(--skillhub-blue);
+  color: #fff;
+}
+
+.navbar-skillhub .btn-profile.btn-inscription {
+  background: var(--skillhub-orange);
+  border-color: var(--skillhub-orange);
+  color: #fff;
+}
+
+.navbar-skillhub .btn-profile.btn-inscription:hover {
+  background: var(--skillhub-orange-hover);
+  border-color: var(--skillhub-orange-hover);
+  color: #fff;
+}
+
+.navbar-skillhub .btn-deconnexion {
+  padding: 8px 16px;
+  background: #dc2626;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.navbar-skillhub .btn-deconnexion:hover {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.navbar-skillhub .navbar-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.navbar-skillhub .navbar-toggle span {
+  width: 28px;
+  height: 3px;
+  background: #333;
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .navbar-skillhub .navbar-toggle {
+    display: flex;
+  }
+
+  .navbar-skillhub .nav-list-wrap {
+    position: absolute;
+    top: 100%;
+    right: 5%;
+    left: 5%;
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .navbar-skillhub .nav-list-wrap.active {
+    display: flex;
+  }
+
+  .navbar-skillhub .nav-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

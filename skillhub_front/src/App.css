@@ -1,5 +1,16 @@
-/* ========== Layout principal de l'application ========== */
-/* Reset et structure flex pour le contenu principal */
+/* ========== Thème SkillHub (inspiré maquette SkillHub1.0) ========== */
+:root {
+  --skillhub-blue: #0066ff;
+  --skillhub-blue-dark: #002d71;
+  --skillhub-blue-hover: #004ec7;
+  --skillhub-orange: #ff7a00;
+  --skillhub-orange-hover: #cf6200;
+  --skillhub-green: #22dd44;
+  --skillhub-bg: #f7f8fa;
+  --skillhub-card-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  --skillhub-radius: 14px;
+  --skillhub-radius-sm: 8px;
+}
 
 * {
   margin: 0;
@@ -7,13 +18,63 @@
   box-sizing: border-box;
 }
 
-/* Conteneur principal en colonne (header + main) */
-.app-layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+body {
+  background: var(--skillhub-bg);
+  color: #333;
+  font-family: 'Segoe UI', 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
-.app-main {
-  flex: 1;
+/* Boutons primaires (bleu / orange) */
+.btn-skillhub {
+  padding: 12px 28px;
+  border: none;
+  border-radius: var(--skillhub-radius-sm);
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-skillhub-primary {
+  background: var(--skillhub-blue);
+  color: #fff;
+}
+
+.btn-skillhub-primary:hover {
+  background: var(--skillhub-blue-dark);
+  color: #fff;
+}
+
+.btn-skillhub-orange {
+  background: var(--skillhub-orange);
+  color: #fff;
+}
+
+.btn-skillhub-orange:hover {
+  background: var(--skillhub-orange-hover);
+  color: #fff;
+}
+
+.btn-skillhub-outline {
+  background: transparent;
+  border: 1px solid var(--skillhub-blue);
+  color: var(--skillhub-blue);
+}
+
+.btn-skillhub-outline:hover {
+  background: var(--skillhub-blue);
+  color: #fff;
+}
+
+/* Titres h2 style maquette */
+h2.skillhub-title {
+  color: var(--skillhub-blue-dark);
+  transition: 0.5s;
+  cursor: pointer;
+}
+
+h2.skillhub-title:hover {
+  color: var(--skillhub-orange-hover);
 }
