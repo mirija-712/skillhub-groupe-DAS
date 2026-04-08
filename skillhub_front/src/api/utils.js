@@ -11,7 +11,7 @@ export async function parseJsonResponse(response) {
     const text = await response.text();
     if (!text || !text.trim()) return {};
     return JSON.parse(text);
-  } catch (error) {
+  } catch {
     return { message: "Réponse serveur invalide (non JSON)." };
   }
 }

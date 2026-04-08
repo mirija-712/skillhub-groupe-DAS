@@ -1,12 +1,12 @@
 // Page catalogue : on affiche les formations du formateur en cartes avec filtre recherche + prix.
 // Clic sur "Voir la formation" = ouverture du modal en lecture seule.
 import { useState, useEffect } from "react";
-import Header from "../components/header";
-import Modal_Formation from "../components/modal_formation";
-import { formationsApi, formatFormationForDisplay } from "../api/formations";
-import { authApi } from "../api/auth";
-import { getMessageErreurApi } from "../api/utils";
-import { IMG_PLACEHOLDER } from "../constants";
+import Header from "../../components/header";
+import Modal_Formation from "../../components/modal_formation";
+import { formationsApi, formatFormationForDisplay } from "../../api/formations";
+import { authApi } from "../../api/auth";
+import { getMessageErreurApi } from "../../api/utils";
+import FormationImage from "../../components/FormationImage";
 import "./css/mes_ateliers.css";
 
 function Mes_Ateliers() {
@@ -145,8 +145,8 @@ function Mes_Ateliers() {
                   <div key={formation.id} className="col">
                     <div className="carte-formation h-100">
                       <div className="conteneur-image-formation">
-                        <img
-                          src={formation.image_url || IMG_PLACEHOLDER}
+                        <FormationImage
+                          imageUrl={formation.image_url}
                           alt={formation.nom}
                           className="image-formation"
                         />

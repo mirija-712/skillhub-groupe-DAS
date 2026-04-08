@@ -1,13 +1,13 @@
 // Page de gestion des formations : liste des formations du formateur + bouton Ajouter + Modifier/Supprimer dans le modal.
 // On charge aussi les catégories pour le formulaire d'ajout et pour l'édition.
 import { useState, useEffect } from "react";
-import Header from "../components/header";
-import Ajouter_Ateliers from "../components/ajouter_ateliers";
-import Modal_Formation from "../components/modal_formation";
-import { formationsApi, formatFormationForDisplay } from "../api/formations";
-import { authApi } from "../api/auth";
-import { getMessageErreurApi } from "../api/utils";
-import { IMG_PLACEHOLDER } from "../constants";
+import Header from "../../components/header";
+import Ajouter_Ateliers from "../../components/ajouter_ateliers";
+import Modal_Formation from "../../components/modal_formation";
+import { formationsApi, formatFormationForDisplay } from "../../api/formations";
+import { authApi } from "../../api/auth";
+import { getMessageErreurApi } from "../../api/utils";
+import FormationImage from "../../components/FormationImage";
 import "./css/gestion_ateliers.css";
 
 function Gestion_Ateliers() {
@@ -84,15 +84,6 @@ function Gestion_Ateliers() {
     const formation = formations.find((f) => f.id === id);
     setFormationSelectionnee(formation);
     setModeModal("modifier");
-    setShowModalFormation(true);
-  };
-
-  // Ouvre le modal en mode lecture seule
-  const handleVoir = (id) => {
-    setShowAjouterFormation(false);
-    const formation = formations.find((f) => f.id === id);
-    setFormationSelectionnee(formation);
-    setModeModal("voir");
     setShowModalFormation(true);
   };
 
@@ -253,8 +244,8 @@ function Gestion_Ateliers() {
                 <div key={formation.id} className="col">
                   <div className="carte-formation h-100">
                     <div className="conteneur-image-formation">
-                      <img
-                        src={formation.image_url || IMG_PLACEHOLDER}
+                      <FormationImage
+                        imageUrl={formation.image_url}
                         alt={formation.nom}
                         className="image-formation"
                       />

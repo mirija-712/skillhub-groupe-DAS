@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import NavbarPublic from "../components/NavbarPublic";
-import { inscriptionsApi } from "../api/inscriptions";
-import { formatFormationForDisplay, getImageUrl } from "../api/formations";
-import { getMessageErreurApi } from "../api/utils";
-import { IMG_PLACEHOLDER } from "../constants";
+import NavbarPublic from "../../components/NavbarPublic";
+import { inscriptionsApi } from "../../api/inscriptions";
+import { formatFormationForDisplay } from "../../api/formations";
+import { getMessageErreurApi } from "../../api/utils";
+import FormationImage from "../../components/FormationImage";
 import "./css/dashboard-apprenant.css";
 
 const LEVEL_LABELS = { beginner: "Débutant", intermediate: "Intermédiaire", advanced: "Avancé" };
@@ -59,7 +59,7 @@ export default function DashboardApprenant() {
               {formations.map((f) => (
                 <div key={f.id} className="carte-formation-apprenant">
                   <div className="carte-image">
-                    <img src={getImageUrl(f.image_url) || IMG_PLACEHOLDER} alt="" loading="lazy" />
+                    <FormationImage imageUrl={f.image_url} alt="" loading="lazy" />
                   </div>
                   <div className="carte-body">
                     <h3>{f.nom || f.title}</h3>

@@ -1,6 +1,6 @@
 # SkillHub — Backend (Laravel)
 
-Backend API REST du projet SkillHub. Authentification JWT, rôles **apprenant** (participant) et **formateur**, catégories, formations (CRUD, upload d’images), **modules** (par formation), **inscriptions** (suivi de formations), **nombre de vues**, et **historisation** (ActivityLogService, logs structurés).
+Backend API REST du projet SkillHub. Authentification JWT, rôles **apprenant** (participant) et **formateur**, catégories, formations (CRUD, upload d’images), **inscriptions** (suivi de formations), et **historisation** (ActivityLogService, logs structurés).
 
 ---
 
@@ -119,8 +119,7 @@ Toutes les routes sont préfixées par **`/api`**.
 ### Formations (liste et détail publics)
 
 - **GET** `/api/formations` — Liste paginée. Query : `recherche`, `id_categorie`, `level`, `id_formateur`, `statut`, `page`, `per_page`. Sans token = toutes les formations ; avec token formateur et sans `id_formateur` = ses formations.
-- **GET** `/api/formations/{id}` — Détail d’une formation (avec modules). Incrémente le nombre de vues.
-
+- **GET** `/api/formations/{id}` — Détail d’une formation.
 ### Formations (création / modification / suppression, formateur uniquement)
 
 - **POST** `/api/formations` — Création (formateurs uniquement). `id_formateur` pris de l’utilisateur connecté.  
@@ -132,13 +131,6 @@ Toutes les routes sont préfixées par **`/api`**.
 - **POST** `/api/formations/{id}` — Mise à jour avec nouvelle image (FormData). Même règle d’autorisation (propriétaire uniquement).
 
 - **DELETE** `/api/formations/{id}` — Suppression (et suppression de l’image sur disque si présente).
-
-### Modules (formateur propriétaire de la formation)
-
-- **GET** `/api/formations/{formationId}/modules` — Liste des modules (ordre).
-- **POST** `/api/formations/{formationId}/modules` — Ajouter un module (`titre`, `contenu`, `type_contenu`, `ordre`).
-- **PUT** `/api/modules/{id}` — Modifier un module.
-- **DELETE** `/api/modules/{id}` — Supprimer un module.
 
 ### Inscriptions (apprenant)
 
@@ -155,8 +147,7 @@ Images : `storage/app/public/formations/`. Historisation : `App\Services\Activit
 
 - **utilisateurs** : `id`, `email`, `mot_de_passe`, `nom`, `prenom` (nullable), `role` (participant, formateur), `created_at`, `updated_at`.
 - **categorie_formations** : `id`, `libelle`, `created_at`, `updated_at`.
-- **formations** : id, id_formateur, id_categorie, nom, description, duree_heures, prix, level, statut, image_url, **nombre_de_vues**, created_at, updated_at.
-- **modules** : id, formation_id, titre, contenu, type_contenu, url_ressource, ordre.
+- **formations** : id, id_formateur, id_categorie, nom, description, duree_heures, prix, level, statut, image_url, created_at, updated_at.
 - **inscriptions** : id, utilisateur_id, formation_id, progression, date_inscription, created_at.
 
 ---

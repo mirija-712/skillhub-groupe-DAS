@@ -1,21 +1,20 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import Accueil from "./pages/Accueil";
+import Accueil from "./pages/public/Accueil";
 import Login from "./connexion/login";
 import Inscription from "./connexion/inscription";
-import FormationsCatalogue from "./pages/FormationsCatalogue";
-import FormationDetail from "./pages/FormationDetail";
-import DashboardApprenant from "./pages/DashboardApprenant";
-import Apprendre from "./pages/Apprendre";
-import RouteFormateur from "./components/RouteFormateur";
-import RouteApprenant from "./components/RouteApprenant";
+import FormationsCatalogue from "./pages/public/FormationsCatalogue";
+import FormationDetail from "./pages/public/FormationDetail";
+import DashboardApprenant from "./pages/espace-client/DashboardApprenant";
+import Apprendre from "./pages/espace-client/Apprendre";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
-const Home = lazy(() => import("./pages/home"));
-const Mes_Ateliers = lazy(() => import("./pages/mes_ateliers"));
-const Gestion_Ateliers = lazy(() => import("./pages/gestion_ateliers"));
+const Home = lazy(() => import("./pages/espace-formateur/Home"));
+const MesAteliers = lazy(() => import("./pages/espace-formateur/MesAteliers"));
+const GestionAteliers = lazy(() => import("./pages/espace-formateur/GestionAteliers"));
 
 function App() {
   return (
@@ -30,44 +29,47 @@ function App() {
         <Route
           path="/dashboard/apprenant"
           element={
-            <RouteApprenant>
+            <ProtectedRoute role="participant">
               <DashboardApprenant />
-            </RouteApprenant>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/apprendre/:id"
           element={
-            <RouteApprenant>
+            <ProtectedRoute role="participant">
               <Apprendre />
-            </RouteApprenant>
+            </ProtectedRoute>
           }
         />
 
         <Route
           path="/dashboard/formateur"
           element={
-            <RouteFormateur>
+            <ProtectedRoute role="formateur">
               <Home />
-            </RouteFormateur>
+            </ProtectedRoute>
           }
         />
         <Route
-          path="/Mes_Ateliers"
+          path="/mes-formations"
           element={
-            <RouteFormateur>
-              <Mes_Ateliers />
-            </RouteFormateur>
+            <ProtectedRoute role="formateur">
+              <MesAteliers />
+            </ProtectedRoute>
           }
         />
         <Route
-          path="/Gestion_Ateliers"
+          path="/gestion-formations"
           element={
-            <RouteFormateur>
-              <Gestion_Ateliers />
-            </RouteFormateur>
+            <ProtectedRoute role="formateur">
+              <GestionAteliers />
+            </ProtectedRoute>
           }
         />
+
+        <Route path="/Mes_Ateliers" element={<Navigate to="/mes-formations" replace />} />
+        <Route path="/Gestion_Ateliers" element={<Navigate to="/gestion-formations" replace />} />
       </Routes>
     </Suspense>
   );

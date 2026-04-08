@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import NavbarPublic from "../components/NavbarPublic";
-import { formationsApi } from "../api/formations";
-import { inscriptionsApi } from "../api/inscriptions";
-import { getImageUrl } from "../api/formations";
+import NavbarPublic from "../../components/NavbarPublic";
+import { formationsApi } from "../../api/formations";
+import { inscriptionsApi } from "../../api/inscriptions";
 import "./css/apprendre.css";
 
 export default function Apprendre() {
@@ -52,8 +51,6 @@ export default function Apprendre() {
     );
   }
 
-  const modules = formation.modules || [];
-
   return (
     <>
       <NavbarPublic />
@@ -77,41 +74,6 @@ export default function Apprendre() {
               <span>{progression} %</span>
               {sauvegardeProgression && <span className="text-muted small"> (enregistrement…)</span>}
             </div>
-          </section>
-
-          <section className="apprendre-modules">
-            <h2>Contenu des modules</h2>
-            {modules.length === 0 ? (
-              <p className="text-muted">Aucun module pour le moment.</p>
-            ) : (
-              <div className="liste-modules-apprendre">
-                {modules.map((mod, i) => (
-                  <div key={mod.id} className="module-apprendre">
-                    <h3>Module {mod.ordre ?? i + 1} – {mod.titre}</h3>
-                    {mod.type_contenu === "video" && mod.url_ressource && (
-                      <div className="module-video">
-                        <a href={mod.url_ressource} target="_blank" rel="noopener noreferrer">
-                          Voir la vidéo
-                        </a>
-                      </div>
-                    )}
-                    {mod.type_contenu === "ressource" && mod.url_ressource && (
-                      <div className="module-ressource">
-                        <a href={mod.url_ressource} target="_blank" rel="noopener noreferrer">
-                          Ressource
-                        </a>
-                      </div>
-                    )}
-                    {mod.contenu && (
-                      <div className="module-contenu" dangerouslySetInnerHTML={{ __html: mod.contenu.replace(/\n/g, "<br />") }} />
-                    )}
-                    {!mod.contenu && !mod.url_ressource && (
-                      <p className="text-muted small">Contenu à venir.</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </section>
 
           <p>

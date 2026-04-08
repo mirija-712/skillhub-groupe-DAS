@@ -39,7 +39,15 @@
 .main-espace-formations {
   flex: 1;
   width: 100%;
-  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 50%, #dbeafe 100%);
+  background-color: #f8fafc;
+  background-image: linear-gradient(
+      rgba(248, 250, 252, 0.9),
+      rgba(219, 234, 254, 0.92)
+    ),
+    url("../../../assets/utilis/espace-formateur.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   padding: 3rem 0 4rem;
   min-height: calc(100vh - 70px);
 }

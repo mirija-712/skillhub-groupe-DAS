@@ -1,7 +1,15 @@
 .page-apprendre {
   min-height: 100vh;
-  background: #f8fafc;
   padding: 2rem 1rem 3rem;
+  background-color: #f8fafc;
+  background-image: linear-gradient(
+      rgba(248, 250, 252, 0.9),
+      rgba(248, 250, 252, 0.94)
+    ),
+    url("../../../assets/utilis/espace-eleve.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .container-apprendre {
@@ -30,8 +38,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.apprendre-progression h2,
-.apprendre-modules h2 {
+.apprendre-progression h2 {
   font-size: 1.1rem;
   font-weight: 700;
   color: #1e293b;
@@ -47,36 +54,4 @@
 .progression-control input[type="range"] {
   flex: 1;
   max-width: 300px;
-}
-
-.liste-modules-apprendre {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.module-apprendre {
-  padding: 1.25rem;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.module-apprendre h3 {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #334155;
-  margin-bottom: 0.75rem;
-}
-
-.module-contenu {
-  color: #475569;
-  line-height: 1.6;
-  font-size: 0.95rem;
-}
-
-.module-video a,
-.module-ressource a {
-  color: #2563eb;
-  text-decoration: underline;
 }

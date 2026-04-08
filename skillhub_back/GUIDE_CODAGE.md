@@ -1,43 +1,58 @@
 # Guide de codage — Backend SkillHub (Laravel API)
 
-Guide pour **recoder le backend depuis zéro**. Chaque section contient le code à reproduire et des explications.
+Ce document recopie **le code source réel** du backend (fichiers du dépôt), avec des **explications courtes** pour chaque partie : *pourquoi c’est là* et *comment ça s’enchaîne*.
+
+**Préfixe API :** tout dans `routes/api.php` est servi sous **`/api`** (ex. `POST http://localhost:8000/api/auth/connexion`).
 
 ---
 
 ## Sommaire
 
-1. [Vue d’ensemble](#1-vue-densemble)
-2. [Configuration et bootstrap](#2-configuration-et-bootstrap)
-3. [Migrations (base de données)](#3-migrations-base-de-données)
-4. [Modèles Eloquent](#4-modèles-eloquent)
-5. [Middleware](#5-middleware)
-6. [Form Requests](#6-form-requests)
-7. [Contrôleurs API](#7-contrôleurs-api)
-8. [Routes API](#8-routes-api)
-9. [Service ActivityLog](#9-service-activitylog)
-10. [Config auth (JWT)](#10-config-auth-jwt)
+1. [Prérequis](#1-prérequis)
+2. [`bootstrap/app.php`](#2-bootstrapappphp)
+3. [`routes/api.php`](#3-routesapiphp)
+4. [Migrations](#4-migrations)
+5. [Modèles Eloquent](#5-modèles-eloquent)
+6. [Middleware](#6-middleware)
+7. [Form Requests](#7-form-requests)
+8. [Contrôleurs API](#8-contrôleurs-api)
+9. [`ActivityLogService`](#9-activitylogservice)
+10. [`config/auth.php`](#10-configauthphp)
+11. [`Controller.php` (base)](#11-controllerphp-base)
+12. [Tableau des endpoints](#12-tableau-des-endpoints)
 
 ---
 
-## 1. Vue d’ensemble
+## 1. Prérequis
 
-- **Stack** : PHP 8.2, Laravel 12, JWT (tymon/jwt-auth).
-- **Rôle** : API REST JSON, préfixe `/api`.
-- **Auth** : guard `api` (JWT). Rôles : `participant` (apprenant), `formateur`.
-- **Tables** : utilisateurs, categorie_formations, formations, modules, inscriptions.
+```bash
+cd skillhub_back
+composer install
+cp .env.example .env   # si besoin
+php artisan key:generate
+php artisan jwt:secret
+php artisan migrate
+php artisan storage:link
+php artisan serve
+```
 
-Ordre de recodage conseillé : migrations → modèles → config auth → middleware → Form Requests → contrôleurs → routes → bootstrap (exceptions JSON) → service ActivityLog.
+- **`APP_URL`** : doit correspondre à l’URL Laravel (ex. `http://127.0.0.1:8000`) — utilisé pour exposer **`image_url`** des formations en URL absolue dans le JSON.
+- **`JWT_SECRET`**, **`JWT_TTL`** : JWT (`tymon/jwt-auth`).
 
 ---
 
-## 2. Configuration et bootstrap
+## 2. `bootstrap/app.php`
 
-### 2.1 Alias middleware et exceptions JSON
-
-Fichier : `bootstrap/app.php`. On enregistre le middleware `formateur` et on force le rendu JSON pour toutes les requêtes `api/*`.
+**Explication :** enregistre les routes ; alias **`formateur`** et **`apprenant`** pour protéger certaines URLs ; pour **`api/*`**, force le rendu des erreurs en **JSON** (422 avec clé `erreurs`, messages 401 JWT lisibles) afin que le frontend React puisse toujours faire `response.json()`.
 
 ```php
 <?php
+
+/**
+ * Point d'entrée de l'application Laravel.
+ * Définit le routage (web, api, console), l'alias du middleware "formateur"
+ * et le rendu des exceptions en JSON pour toutes les routes api/*.
+ */
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -59,11 +74,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'formateur' => \App\Http\Middleware\VerifierFormateur::class,
+            'apprenant' => \App\Http\Middleware\VerifierApprenant::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Pour les routes api/* on renvoie toujours du JSON (le front attend du JSON)
         $exceptions->shouldRenderJsonWhen(fn (Request $request, \Throwable $e) => $request->is('api/*'));
 
+        // 422 : erreurs de validation (champs manquants, format invalide, etc.)
         $exceptions->renderable(function (ValidationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -73,12 +91,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // 401 : non authentifié (token manquant ou invalide)
         $exceptions->renderable(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*') && $request->expectsJson()) {
                 return response()->json(['message' => 'Token manquant ou invalide. Veuillez vous reconnecter.'], 401);
             }
         });
 
+        // 401 JWT : token expiré, invalide, ou non fourni
         $exceptions->renderable(function (UnauthorizedHttpException $e, Request $request) {
             if ($request->is('api/*')) {
                 $message = $e->getMessage();
@@ -89,10 +109,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 } elseif (str_contains($message, 'not provided')) {
                     $message = 'Token manquant.';
                 }
+
                 return response()->json(['message' => $message], 401);
             }
         });
 
+        // 404 : ressource non trouvée (ex. formation inexistante)
         $exceptions->renderable(function (NotFoundHttpException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json(['message' => 'Ressource introuvable'], 404);
@@ -113,9 +135,11 @@ return Application::configure(basePath: dirname(__DIR__))
                     $message = str_contains(strtolower($e->getMessage()), 'not provided')
                         ? 'Token manquant.'
                         : 'Token invalide ou expiré. Veuillez vous reconnecter.';
+
                     return response()->json(['message' => $message], 401);
                 }
                 $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
                 return response()->json([
                     'message' => config('app.debug') ? $e->getMessage() : 'Une erreur inattendue est survenue.',
                 ], $status);
@@ -124,15 +148,71 @@ return Application::configure(basePath: dirname(__DIR__))
     })->create();
 ```
 
-**Explication** : `shouldRenderJsonWhen` fait que toute exception sur `api/*` renvoie du JSON. Les `renderable` personnalisent les réponses 422, 401, 404, 500 et les erreurs JWT pour que le front reçoive toujours un objet avec `message` (et `erreurs` en 422).
+---
+
+## 3. `routes/api.php`
+
+**Explication :** auth publique (inscription / connexion) ; lecture catalogue **`GET formations`** sans login ; écriture formations réservée aux **formateurs** ; inscriptions et progression réservées aux **participants** (`middleware apprenant`).
+
+```php
+<?php
+
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategorieFormationController;
+use App\Http\Controllers\Api\FormationController;
+use App\Http\Controllers\Api\InscriptionController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Routes API - Toutes les URLs sont préfixées par /api
+|--------------------------------------------------------------------------
+*/
+
+// --- Auth
+Route::prefix('auth')->group(function () {
+    Route::post('inscription', [AuthController::class, 'register']);
+    Route::post('connexion', [AuthController::class, 'login']);
+    Route::middleware('auth:api')->group(function () {
+        Route::post('deconnexion', [AuthController::class, 'logout']);
+        Route::get('me', [AuthController::class, 'me']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+    });
+});
+
+Route::get('categories', [CategorieFormationController::class, 'index']);
+
+// --- Formations : liste et détail publics (catalogue, page accueil). Création / modification / suppression protégées.
+Route::get('formations', [FormationController::class, 'index']);
+Route::get('formations/{id}', [FormationController::class, 'show'])->whereNumber('id');
+
+Route::middleware('auth:api')->group(function () {
+    Route::middleware('formateur')->group(function () {
+        Route::post('formations', [FormationController::class, 'store']);
+        Route::put('formations/{formation}', [FormationController::class, 'update']);
+        Route::post('formations/{formation}', [FormationController::class, 'update']);
+        Route::delete('formations/{formation}', [FormationController::class, 'destroy']);
+    });
+
+    // Inscription / désinscription / progression / liste suivies : apprenants uniquement
+    Route::middleware('apprenant')->group(function () {
+        Route::post('formations/{formationId}/inscription', [InscriptionController::class, 'store']);
+        Route::delete('formations/{formationId}/inscription', [InscriptionController::class, 'destroy']);
+        Route::get('apprenant/formations', [InscriptionController::class, 'index']);
+        Route::put('formations/{formationId}/progression', [InscriptionController::class, 'updateProgression']);
+    });
+});
+```
 
 ---
 
-## 3. Migrations (base de données)
+## 4. Migrations
 
-Créer les migrations dans cet ordre (dépendances FK).
+**Explication :** historique du schéma. Ordre = noms de fichiers. Les **`modules`** sont créés puis la table est supprimée. **`nombre_de_vues`** est ajouté puis retiré (dernière migration). Pour **recoder uniquement l’état actuel**, tu peux te fier au schéma implicite des **modèles** après toutes les migrations.
 
-### 3.1 Table `utilisateurs`
+Les fichiers complets sont dans `database/migrations/`. Contenu aligné sur le dépôt :
+
+### `2026_03_04_170642_create_users.php`
 
 ```php
 <?php
@@ -143,6 +223,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Création de la table utilisateurs (email, mot_de_passe, nom, prenom, role participant|formateur).
+     */
     public function up(): void
     {
         Schema::create('utilisateurs', function (Blueprint $table) {
@@ -156,6 +239,9 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Suppression de la table utilisateurs.
+     */
     public function down(): void
     {
         Schema::dropIfExists('utilisateurs');
@@ -163,73 +249,341 @@ return new class extends Migration
 };
 ```
 
-### 3.2 Table `categorie_formations`
+### `2026_03_04_170721_create_categorie_formation.php`
 
 ```php
-Schema::create('categorie_formations', function (Blueprint $table) {
-    $table->id();
-    $table->string('libelle', 100)->unique();
-    $table->timestamps();
-});
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Création de la table catégories de formation (libellé unique : ex. "Développement", "Design").
+     */
+    public function up(): void
+    {
+        Schema::create('categorie_formations', function (Blueprint $table) {
+            $table->id();
+            $table->string('libelle', 100)->unique();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Suppression de la table categorie_formations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('categorie_formations');
+    }
+};
 ```
 
-### 3.3 Table `formations`
+### `2026_03_04_170743_create_formations.php`
 
 ```php
-Schema::create('formations', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('id_formateur')->constrained('utilisateurs')->cascadeOnDelete();
-    $table->foreignId('id_categorie')->constrained('categorie_formations')->restrictOnDelete();
-    $table->string('nom', 200);
-    $table->text('description')->nullable();
-    $table->decimal('duree_heures', 5, 2);
-    $table->decimal('prix', 10, 2)->default(0);
-    $table->enum('level', ['beginner', 'intermediate', 'advanced'])->nullable();
-    $table->string('statut', 50)->default('En Cours');
-    $table->string('image_url', 500)->nullable();
-    $table->unsignedInteger('nombre_de_vues')->default(0);
-    $table->timestamps();
-});
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Création de la table formations : lien formateur + catégorie, nom, description, durée, prix, statut, image.
+     */
+    public function up(): void
+    {
+        Schema::create('formations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('id_formateur')->constrained('utilisateurs')->cascadeOnDelete();
+            $table->foreignId('id_categorie')->constrained('categorie_formations')->restrictOnDelete();
+            $table->string('nom', 200);
+            $table->text('description')->nullable();
+            $table->date('date');
+            $table->time('heure')->nullable();
+            $table->decimal('duree_heures', 5, 2);
+            $table->decimal('prix', 10, 2)->default(0);
+            $table->string('statut', 50)->default('En Cours');
+            $table->string('image_url', 500)->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Suppression de la table formations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('formations');
+    }
+};
 ```
 
-(On peut partir de la migration d’origine avec date/heure puis ajouter une migration pour supprimer date/heure et ajouter level + nombre_de_vues ; ici version “finale” simplifiée.)
-
-### 3.4 Table `modules`
+### `2026_03_04_180000_remove_date_heure_description_from_formations.php`
 
 ```php
-Schema::create('modules', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('formation_id')->constrained('formations')->cascadeOnDelete();
-    $table->string('titre', 200);
-    $table->text('contenu')->nullable();
-    $table->string('type_contenu', 50)->default('texte');
-    $table->string('url_ressource', 500)->nullable();
-    $table->unsignedSmallInteger('ordre')->default(1);
-    $table->timestamps();
-});
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Suppression des colonnes date, heure et description (refonte du schéma formations).
+     */
+    public function up(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->dropColumn(['date', 'heure', 'description']);
+        });
+    }
+
+    /**
+     * Restauration des colonnes en cas de rollback.
+     */
+    public function down(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->date('date')->after('nom');
+            $table->time('heure')->nullable()->after('date');
+            $table->text('description')->nullable()->after('nom');
+        });
+    }
+};
 ```
 
-### 3.5 Table `inscriptions`
+### `2026_03_06_000001_add_title_description_level_to_formations.php`
 
 ```php
-Schema::create('inscriptions', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('utilisateur_id')->constrained('utilisateurs')->cascadeOnDelete();
-    $table->foreignId('formation_id')->constrained('formations')->cascadeOnDelete();
-    $table->unsignedTinyInteger('progression')->default(0);
-    $table->timestamp('date_inscription')->useCurrent();
-    $table->timestamps();
-    $table->unique(['utilisateur_id', 'formation_id']);
-});
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Ajout des colonnes description et level (beginner/intermediate/advanced) à la table formations.
+     */
+    public function up(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->text('description')->nullable()->after('nom');
+            $table->enum('level', ['beginner', 'intermediate', 'advanced'])->nullable()->after('description');
+        });
+    }
+
+    /**
+     * Suppression de description et level en cas de rollback.
+     */
+    public function down(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->dropColumn(['description', 'level']);
+        });
+    }
+};
+```
+
+### `2026_03_06_000002_drop_title_from_formations.php`
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Suppression de la colonne title (on utilise uniquement "nom" pour le titre de la formation).
+     */
+    public function up(): void
+    {
+        if (Schema::hasColumn('formations', 'title')) {
+            Schema::table('formations', function (Blueprint $table) {
+                $table->dropColumn('title');
+            });
+        }
+    }
+
+    /**
+     * Restauration de la colonne title en cas de rollback.
+     */
+    public function down(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->string('title', 200)->nullable()->after('nom');
+        });
+    }
+};
+```
+
+### `2026_03_15_100000_add_nombre_de_vues_to_formations.php`
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->unsignedInteger('nombre_de_vues')->default(0)->after('image_url');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->dropColumn('nombre_de_vues');
+        });
+    }
+};
+```
+
+### `2026_03_15_100001_create_modules_table.php`
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('modules', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('formation_id')->constrained('formations')->cascadeOnDelete();
+            $table->string('titre', 200);
+            $table->text('contenu')->nullable();
+            $table->string('type_contenu', 50)->default('texte'); // texte, video, ressource
+            $table->string('url_ressource', 500)->nullable();
+            $table->unsignedSmallInteger('ordre')->default(1);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('modules');
+    }
+};
+```
+
+### `2026_03_15_100002_create_inscriptions_table.php`
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('inscriptions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('utilisateur_id')->constrained('utilisateurs')->cascadeOnDelete();
+            $table->foreignId('formation_id')->constrained('formations')->cascadeOnDelete();
+            $table->unsignedTinyInteger('progression')->default(0); // 0-100
+            $table->timestamp('date_inscription')->useCurrent();
+            $table->timestamps();
+            $table->unique(['utilisateur_id', 'formation_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('inscriptions');
+    }
+};
+```
+
+### `2026_03_15_100003_drop_modules_table.php`
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::dropIfExists('modules');
+    }
+
+    public function down(): void
+    {
+        // Rétablissement volontairement omis : la fonctionnalité modules a été retirée du projet.
+    }
+};
+```
+
+### `2026_04_09_150000_drop_vue_tracking_from_formations.php`
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Suppression du compteur de vues et de la table associée (fonctionnalité retirée du projet).
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::dropIfExists('formation_vue_utilisateurs');
+
+        if (Schema::hasColumn('formations', 'nombre_de_vues')) {
+            Schema::table('formations', function (Blueprint $table) {
+                $table->dropColumn('nombre_de_vues');
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        Schema::table('formations', function (Blueprint $table) {
+            $table->unsignedInteger('nombre_de_vues')->default(0)->after('image_url');
+        });
+    }
+};
 ```
 
 ---
 
-## 4. Modèles Eloquent
+## 5. Modèles Eloquent
 
-### 4.1 Utilisateur (JWT + Auth)
+**Explication :**  
+- **`Utilisateur`** : table `utilisateurs`, colonne **`mot_de_passe`** (hash) ; **`getAuthPassword()`** permet à `attempt()` d’utiliser cette colonne alors que le JSON d’API envoie `mot_de_passe`.  
+- **`Formation`** : accessor **`imageUrl`** transforme `/storage/...` en URL absolue avec **`APP_URL`**.  
+- **`Inscription`** : lie apprenant ↔ formation + `progression`.
 
-La table est `utilisateurs`, le champ mot de passe `mot_de_passe`. Laravel/JWT attendent `password` : on utilise `getAuthPassword()` pour leur donner `mot_de_passe`.
+### `app/Models/Utilisateur.php`
 
 ```php
 <?php
@@ -241,12 +595,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
+/**
+ * Modèle Utilisateur pour l'auth JWT. La table s'appelle "utilisateurs", le champ mot de passe "mot_de_passe".
+ * getAuthPassword() dit à Laravel d'utiliser mot_de_passe pour vérifier le password. getJWTIdentifier et getJWTCustomClaims pour le token.
+ */
 class Utilisateur extends Authenticatable implements JWTSubject
 {
     use HasFactory;
 
     protected $table = 'utilisateurs';
 
+    /** Champs assignables en masse (inscription, etc.) */
     protected $fillable = [
         'email',
         'mot_de_passe',
@@ -255,7 +614,10 @@ class Utilisateur extends Authenticatable implements JWTSubject
         'role',
     ];
 
-    protected $hidden = ['mot_de_passe'];
+    /** Ne pas exposer le mot de passe dans les réponses JSON */
+    protected $hidden = [
+        'mot_de_passe',
+    ];
 
     protected function casts(): array
     {
@@ -264,11 +626,13 @@ class Utilisateur extends Authenticatable implements JWTSubject
         ];
     }
 
+    /** Identifiant inclus dans le token JWT (id utilisateur) */
     public function getJWTIdentifier(): mixed
     {
         return $this->getKey();
     }
 
+    /** Données additionnelles dans le payload du token (email, role) */
     public function getJWTCustomClaims(): array
     {
         return [
@@ -277,6 +641,7 @@ class Utilisateur extends Authenticatable implements JWTSubject
         ];
     }
 
+    /** Indique à Laravel/JWT d'utiliser la colonne "mot_de_passe" pour l'authentification */
     public function getAuthPassword()
     {
         return $this->mot_de_passe;
@@ -299,44 +664,23 @@ class Utilisateur extends Authenticatable implements JWTSubject
 }
 ```
 
-### 4.2 CategorieFormation
+### `app/Models/Formation.php`
 
 ```php
 <?php
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-
-class CategorieFormation extends Model
-{
-    use HasFactory;
-
-    protected $table = 'categorie_formations';
-
-    protected $fillable = ['libelle'];
-
-    public function formations(): HasMany
-    {
-        return $this->hasMany(Formation::class, 'id_categorie');
-    }
-}
-```
-
-### 4.3 Formation
-
-```php
-<?php
-
-namespace App\Models;
-
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Modèle Formation : une formation a un formateur (utilisateur) et une catégorie.
+ * En BDD : nom, description, duree_heures, prix, level, statut, image_url.
+ */
 class Formation extends Model
 {
     use HasFactory;
@@ -353,7 +697,6 @@ class Formation extends Model
         'level',
         'statut',
         'image_url',
-        'nombre_de_vues',
     ];
 
     protected function casts(): array
@@ -364,21 +707,40 @@ class Formation extends Model
         ];
     }
 
+    /**
+     * En BDD : chemin relatif (/storage/formations/…). En JSON API : URL absolue pour que le front (Vite, autre domaine) charge l’image sans deviner le port Laravel.
+     * APP_URL dans .env doit correspondre à l’URL du serveur (ex. http://localhost:8000 avec php artisan serve).
+     */
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $value) {
+                if ($value === null || $value === '') {
+                    return null;
+                }
+                if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+                    return $value;
+                }
+                $base = rtrim((string) config('app.url'), '/');
+
+                return $base !== '' ? $base.$value : $value;
+            },
+        );
+    }
+
+    /** Relation : une formation appartient à un utilisateur (formateur) */
     public function formateur(): BelongsTo
     {
         return $this->belongsTo(Utilisateur::class, 'id_formateur');
     }
 
+    /** Relation : une formation appartient à une catégorie (domaine) */
     public function categorie(): BelongsTo
     {
         return $this->belongsTo(CategorieFormation::class, 'id_categorie');
     }
 
-    public function modules(): HasMany
-    {
-        return $this->hasMany(Module::class)->orderBy('ordre');
-    }
-
+    /** Relation : inscriptions des apprenants à cette formation */
     public function inscriptions(): HasMany
     {
         return $this->hasMany(Inscription::class);
@@ -386,7 +748,7 @@ class Formation extends Model
 }
 ```
 
-### 4.4 Module
+### `app/Models/CategorieFormation.php`
 
 ```php
 <?php
@@ -395,31 +757,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Module extends Model
+/**
+ * Modèle Catégorie de formation (ex. "Développement", "Design"). Table categorie_formations, champ principal : libelle.
+ * Utilisé pour le select dans le formulaire d'ajout de formation.
+ */
+class CategorieFormation extends Model
 {
     use HasFactory;
 
-    protected $table = 'modules';
+    protected $table = 'categorie_formations';
 
-    protected $fillable = [
-        'formation_id',
-        'titre',
-        'contenu',
-        'type_contenu',
-        'url_ressource',
-        'ordre',
-    ];
+    protected $fillable = ['libelle'];
 
-    public function formation(): BelongsTo
+    /** Relation : une catégorie peut avoir plusieurs formations */
+    public function formations(): HasMany
     {
-        return $this->belongsTo(Formation::class);
+        return $this->hasMany(Formation::class, 'id_categorie');
     }
 }
 ```
 
-### 4.5 Inscription
+### `app/Models/Inscription.php`
 
 ```php
 <?php
@@ -463,9 +823,11 @@ class Inscription extends Model
 
 ---
 
-## 5. Middleware
+## 6. Middleware
 
-Fichier : `app/Http/Middleware/VerifierFormateur.php`. Réservé aux utilisateurs connectés avec le rôle `formateur`.
+**Explication :** après **`auth:api`**, ces middlewares vérifient le **rôle** dans la base. Sinon **403** JSON.
+
+### `app/Http/Middleware/VerifierFormateur.php`
 
 ```php
 <?php
@@ -476,12 +838,17 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware utilisé sur les routes de création / modification / suppression des formations.
+ * Si l'utilisateur n'est pas connecté ou n'a pas le rôle "formateur", on renvoie 403.
+ */
 class VerifierFormateur
 {
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
+        // Seuls les utilisateurs connectés avec le rôle "formateur" peuvent accéder aux routes protégées
         if (! $user || $user->role !== 'formateur') {
             return response()->json([
                 'message' => 'Accès réservé aux formateurs uniquement.',
@@ -493,13 +860,44 @@ class VerifierFormateur
 }
 ```
 
+### `app/Http/Middleware/VerifierApprenant.php`
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Routes réservées aux utilisateurs avec le rôle participant (apprenant).
+ */
+class VerifierApprenant
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        if (! $user || $user->role !== 'participant') {
+            return response()->json([
+                'message' => 'Réservé aux apprenants.',
+            ], 403);
+        }
+
+        return $next($request);
+    }
+}
+```
+
 ---
 
-## 6. Form Requests
+## 7. Form Requests
 
-### 6.1 RegisterRequest
+**Explication :** centralisent la validation. Les erreurs sont converties en **422** JSON par `bootstrap/app.php`.
 
-Fichier : `app/Http/Requests/RegisterRequest.php`.
+### `app/Http/Requests/RegisterRequest.php`
 
 ```php
 <?php
@@ -508,6 +906,10 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validation du formulaire d'inscription. Le front envoie email, mot_de_passe, nom, prenom (optionnel), role.
+ * Le rôle peut être "participant" (apprenant) ou "formateur".
+ */
 class RegisterRequest extends FormRequest
 {
     public function authorize(): bool
@@ -515,6 +917,11 @@ class RegisterRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Règles : email unique, mot de passe min 6, role = participant ou formateur.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
@@ -526,6 +933,9 @@ class RegisterRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
@@ -533,8 +943,13 @@ class RegisterRequest extends FormRequest
             'email.email' => "L'email n'est pas valide.",
             'email.unique' => 'Cet email est déjà utilisé.',
             'mot_de_passe.required' => 'Le mot de passe est requis.',
+            'mot_de_passe.string' => 'Le mot de passe doit être une chaîne de caractères.',
             'mot_de_passe.min' => 'Le mot de passe doit contenir au moins :min caractères.',
             'nom.required' => 'Le nom est requis.',
+            'nom.string' => 'Le nom doit être une chaîne de caractères.',
+            'nom.max' => 'Le nom ne peut pas dépasser :max caractères.',
+            'prenom.string' => 'Le prénom doit être une chaîne de caractères.',
+            'prenom.max' => 'Le prénom ne peut pas dépasser :max caractères.',
             'role.required' => 'Le rôle est requis.',
             'role.in' => 'Le rôle doit être Apprenant ou Formateur.',
         ];
@@ -542,9 +957,52 @@ class RegisterRequest extends FormRequest
 }
 ```
 
-### 6.2 StoreFormationRequest
+### `app/Http/Requests/LoginRequest.php`
 
-Le front envoie `title`, `description`, `price`, `duration`, `level` ; le contrôleur mappe vers `nom`, `duree_heures`, `prix`.
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+/**
+ * Validation de la connexion (email + mot_de_passe), comme RegisterRequest pour l'inscription.
+ */
+class LoginRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'email' => 'required|email',
+            'mot_de_passe' => 'required|string',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'email.required' => "L'email est requis.",
+            'email.email' => "L'email n'est pas valide.",
+            'mot_de_passe.required' => 'Le mot de passe est requis.',
+            'mot_de_passe.string' => 'Le mot de passe doit être une chaîne de caractères.',
+        ];
+    }
+}
+```
+
+### `app/Http/Requests/StoreFormationRequest.php`
 
 ```php
 <?php
@@ -554,13 +1012,23 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validation de la création d'une formation. Le front envoie title, description, price, duration, level (obligatoires),
+ * id_categorie et image en option. Le controller mappe ensuite title -> nom, etc.
+ */
 class StoreFormationRequest extends FormRequest
 {
+    /** L'autorisation (formateur) est gérée par le middleware "formateur" sur la route */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Règles : title, description, price, duration, level obligatoires ; id_categorie et image optionnels.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
@@ -574,23 +1042,33 @@ class StoreFormationRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
             'title.required' => 'Le titre est requis.',
+            'title.max' => 'Le titre ne peut pas dépasser :max caractères.',
             'description.required' => 'La description est requise.',
+            'description.max' => 'La description ne peut pas dépasser :max caractères.',
             'price.required' => 'Le prix est requis.',
+            'price.numeric' => 'Le prix doit être un nombre.',
+            'price.min' => 'Le prix ne peut pas être négatif.',
             'duration.required' => 'La durée est requise.',
+            'duration.numeric' => 'La durée doit être un nombre.',
+            'duration.min' => 'La durée doit être positive.',
             'level.required' => 'Le niveau est requis.',
             'level.in' => 'Le niveau doit être beginner, intermediate ou advanced.',
+            'id_categorie.exists' => 'La catégorie sélectionnée n\'existe pas.',
+            'image.image' => 'Le fichier doit être une image (jpeg, png, jpg, gif, webp).',
+            'image.max' => 'L\'image ne doit pas dépasser 2 Mo.',
         ];
     }
 }
 ```
 
-### 6.3 UpdateFormationRequest
-
-Tous les champs en `sometimes` pour mise à jour partielle (nom, description, duree_heures, prix, level, statut, id_categorie, image).
+### `app/Http/Requests/UpdateFormationRequest.php`
 
 ```php
 <?php
@@ -600,13 +1078,23 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validation de la mise à jour d'une formation. Tous les champs en "sometimes" : on ne valide que ceux qui sont envoyés.
+ * Le front envoie nom, description, level, duree_heures, prix, statut, id_categorie, et optionnellement image (FormData).
+ */
 class UpdateFormationRequest extends FormRequest
 {
+    /** L'autorisation (propriétaire de la formation) est vérifiée dans le contrôleur */
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * Tous les champs en "sometimes" : seuls les champs envoyés sont validés (PATCH-like).
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
     public function rules(): array
     {
         return [
@@ -621,175 +1109,746 @@ class UpdateFormationRequest extends FormRequest
             'image_url' => 'nullable|string|max:500',
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'id_categorie.exists' => 'La catégorie n\'existe pas.',
+            'nom.max' => 'Le nom ne peut pas dépasser :max caractères.',
+            'description.max' => 'La description ne peut pas dépasser :max caractères.',
+            'level.in' => 'Le niveau doit être beginner, intermediate ou advanced.',
+            'duree_heures.numeric' => 'La durée doit être un nombre.',
+            'duree_heures.min' => 'La durée doit être positive.',
+            'prix.numeric' => 'Le prix doit être un nombre.',
+            'prix.min' => 'Le prix ne peut pas être négatif.',
+            'statut.in' => 'Le statut doit être En Cours ou Terminé.',
+            'image.image' => 'Le fichier doit être une image (jpeg, png, jpg, gif, webp).',
+            'image.max' => 'L\'image ne doit pas dépasser 2 Mo.',
+        ];
+    }
 }
 ```
 
 ---
 
-## 7. Contrôleurs API
+## 8. Contrôleurs API
 
-### 7.1 AuthController
+### `app/Http/Controllers/Api/AuthController.php`
 
-- **register** : `RegisterRequest` → `Utilisateur::create($request->validated())` en transaction, 201.
-- **login** : validation email + mot_de_passe, puis `auth('api')->attempt(['email' => ..., 'password' => $request->mot_de_passe])`. Réponse : token + utilisateur (id, email, nom, prenom, role).
-- **logout** : `auth('api')->logout()`, 200.
-- **me** : utilisateur connecté ou 401.
-- **refresh** : nouveau token JWT, 200 ou 401.
-
-Exemple pour **login** (le reste suit la même logique) :
-
-```php
-public function login(Request $request): JsonResponse
-{
-    $validator = Validator::make($request->all(), [
-        'email' => 'required|email',
-        'mot_de_passe' => 'required|string',
-    ], [
-        'email.required' => "L'email est requis.",
-        'mot_de_passe.required' => 'Le mot de passe est requis.',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Erreur de validation',
-            'erreurs' => $validator->errors(),
-        ], 422);
-    }
-
-    $credentials = [
-        'email' => $request->email,
-        'password' => $request->mot_de_passe,
-    ];
-
-    if (! $token = auth('api')->attempt($credentials)) {
-        return response()->json(['message' => 'Email ou mot de passe incorrect.'], 401);
-    }
-
-    $utilisateur = auth('api')->user();
-
-    return response()->json([
-        'message' => 'Connexion réussie',
-        'utilisateur' => [
-            'id' => $utilisateur->id,
-            'email' => $utilisateur->email,
-            'nom' => $utilisateur->nom,
-            'prenom' => $utilisateur->prenom,
-            'role' => $utilisateur->role,
-        ],
-        'token' => $token,
-        'type' => 'bearer',
-    ]);
-}
-```
-
-**Important** : JWT attend la clé `password` ; le front envoie `mot_de_passe`, d’où le mapping dans `$credentials`.
-
-### 7.2 CategorieFormationController
-
-```php
-public function index(): JsonResponse
-{
-    $categories = CategorieFormation::orderBy('libelle')->get(['id', 'libelle']);
-    return response()->json(['categories' => $categories]);
-}
-```
-
-### 7.3 FormationController (résumé)
-
-- **index(Request)** : `Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle'])->withCount('inscriptions')`. Si user formateur et pas de `id_formateur` en query → filtrer par `id_formateur = user->id`. Filtres : id_formateur, id_categorie, statut, level, recherche (like nom/description). Pagination `per_page` (max 50), `page`. Réponse : `{ formations, meta }`.
-- **show($id)** : with formateur, categorie, modules, withCount inscriptions. Si pas trouvé → 404. Puis `increment('nombre_de_vues')`, refresh, `ActivityLogService::logCourseView`. Réponse : `{ formation }`.
-- **store(StoreFormationRequest)** : id_formateur = user()->id. Mapping : nom = title, duree_heures = duration, prix = price. id_categorie par défaut = première catégorie (sinon 422). statut = 'En Cours'. Si fichier image : `storeAs('formations', Str::uuid().'.'.$extension, 'public')`, image_url = '/storage/...'. Créer la formation puis 3 modules par défaut ("Module 1 – À compléter", etc.). Log `logCourseCreation`. Réponse 201 avec formation + champs title, description, price, duration, level pour le front.
-- **update(UpdateFormationRequest, $id)** : Formation::find($id), 404 si absent. Vérifier id_formateur === user()->id, sinon 403. Si nouvelle image : supprimer l’ancienne (convertir image_url en chemin disque), stocker la nouvelle comme en store. Mettre à jour les champs validés. Log `logCourseUpdate` (old/new values). Réponse : formation avec title, description, price, duration, level.
-- **destroy($id)** : même vérif 404 + propriétaire. Supprimer l’image disque si présente. delete(). Log `logCourseDeletion`.
-
-Méthode utilitaire pour passer de l’URL d’image au chemin disque :
-
-```php
-private static function imageUrlToStoragePath(?string $imageUrl): ?string
-{
-    if (! $imageUrl) return null;
-    $imageUrl = ltrim($imageUrl, '/');
-    if (str_starts_with($imageUrl, 'storage/')) {
-        return substr($imageUrl, 8);
-    }
-    return $imageUrl;
-}
-```
-
-**Note** : Si la route est `formations/{formation}`, le paramètre de la méthode doit s’appeler `$formation` (Laravel lie le segment au nom du paramètre). On peut alors faire `$id = $formation` ou utiliser directement `Formation::find($formation)`.
-
-### 7.4 ModuleController
-
-- **index($formationId)** : Formation::find ou 404, puis modules orderBy ordre.
-- **store(Request, $formationId)** : vérifier formation + propriétaire (id_formateur === auth()->id()). Valider titre, contenu, type_contenu (texte|video|ressource), url_ressource, ordre. ordre par défaut = max(ordre)+1. Créer module, 201.
-- **update(Request, $id)** : charger module avec formation, vérifier propriétaire. Valider en sometimes. update(), retour module fresh.
-- **destroy($id)** : même vérif propriétaire, delete().
-
-### 7.5 InscriptionController
-
-- **store($formationId)** : rôle participant uniquement (403 sinon). Formation existante (404). Pas déjà inscrit (422 si doublon). Inscription::create(utilisateur_id, formation_id, progression 0). Log logCourseEnrollment. 201.
-- **destroy($formationId)** : participant uniquement. Trouver inscription user+formation, 404 si absente. delete(). 200.
-- **index()** : participant uniquement. Inscriptions de l’user with formation.formateur, formation.categorie, orderBy date_inscription desc. Retourner les formations avec progression et date_inscription sur chaque élément.
-- **updateProgression($formationId)** : inscription user+formation, 404 si absente. progression = request input, borné 0–100. update. Réponse avec progression.
-
----
-
-## 8. Routes API
-
-Fichier : `routes/api.php`. Toutes les URLs sont sous `/api`.
+**Explication :**  
+- **register** : crée un `Utilisateur` dans une transaction.  
+- **login** : `mot_de_passe` du JSON → clé **`password`** pour `auth('api')->attempt()` (convention Laravel).  
+- **logout / me / refresh** : JWT standard.
 
 ```php
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CategorieFormationController;
-use App\Http\Controllers\Api\FormationController;
-use App\Http\Controllers\Api\InscriptionController;
-use App\Http\Controllers\Api\ModuleController;
-use Illuminate\Support\Facades\Route;
+namespace App\Http\Controllers\Api;
 
-Route::prefix('auth')->group(function () {
-    Route::post('inscription', [AuthController::class, 'register']);
-    Route::post('connexion', [AuthController::class, 'login']);
-    Route::middleware('auth:api')->group(function () {
-        Route::post('deconnexion', [AuthController::class, 'logout']);
-        Route::get('me', [AuthController::class, 'me']);
-        Route::post('refresh', [AuthController::class, 'refresh']);
-    });
-});
+use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Models\Utilisateur;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use OpenApi\Annotations as OA;
 
-Route::get('categories', [CategorieFormationController::class, 'index']);
+/**
+ * Auth : inscription, connexion, déconnexion, utilisateur connecté, refresh token.
+ *
+ * @OA\OpenApi(
+ *
+ *     @OA\Info(title="SkillHub API", version="1.0", description="API REST SkillHub - Formations et JWT"),
+ *
+ *     @OA\Server(url="/api", description="API"),
+ *
+ *     @OA\Components(
+ *
+ *         @OA\SecurityScheme(securityScheme="bearerAuth", type="http", scheme="bearer", bearerFormat="JWT")
+ *     )
+ * )
+ */
+class AuthController extends Controller
+{
+    /**
+     * Inscription d'un nouvel utilisateur.
+     *
+     * @OA\Post(path="/auth/inscription", tags={"Auth"}, summary="Inscription",
+     *
+     *     @OA\RequestBody(required=true,
+     *
+     *         @OA\JsonContent(required={"email","mot_de_passe","nom","role"},
+     *
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="mot_de_passe", type="string", minLength=6),
+     *             @OA\Property(property="nom", type="string", maxLength=100),
+     *             @OA\Property(property="prenom", type="string", maxLength=100),
+     *             @OA\Property(property="role", type="string", enum={"participant","formateur"})
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response="201", description="Utilisateur créé"),
+     *     @OA\Response(response="422", description="Erreur de validation")
+     * )
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        try {
+            DB::transaction(fn () => Utilisateur::create($request->validated()));
 
-Route::get('formations', [FormationController::class, 'index']);
-Route::get('formations/{id}', [FormationController::class, 'show'])->whereNumber('id');
+            return response()->json([
+                'message' => 'Utilisateur créé avec succès. Vous pouvez maintenant vous connecter.',
+            ], 201);
+        } catch (Exception $e) {
+            Log::error('Erreur inscription: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
 
-Route::middleware('auth:api')->group(function () {
-    Route::middleware('formateur')->group(function () {
-        Route::post('formations', [FormationController::class, 'store']);
-        Route::put('formations/{formation}', [FormationController::class, 'update']);
-        Route::post('formations/{formation}', [FormationController::class, 'update']);
-        Route::delete('formations/{formation}', [FormationController::class, 'destroy']);
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.',
+            ], 500);
+        }
+    }
 
-        Route::get('formations/{formationId}/modules', [ModuleController::class, 'index'])->whereNumber('formationId');
-        Route::post('formations/{formationId}/modules', [ModuleController::class, 'store'])->whereNumber('formationId');
-        Route::put('modules/{id}', [ModuleController::class, 'update'])->whereNumber('id');
-        Route::delete('modules/{id}', [ModuleController::class, 'destroy'])->whereNumber('id');
-    });
+    /**
+     * Connexion.
+     *
+     * @OA\Post(path="/auth/connexion", tags={"Auth"}, summary="Connexion",
+     *
+     *     @OA\RequestBody(required=true,
+     *
+     *         @OA\JsonContent(required={"email","mot_de_passe"},
+     *
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="mot_de_passe", type="string")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response="200", description="Connexion réussie - retourne token JWT"),
+     *     @OA\Response(response="401", description="Identifiants incorrects"),
+     *     @OA\Response(response="422", description="Erreur de validation")
+     * )
+     */
+    public function login(LoginRequest $request): JsonResponse
+    {
+        try {
+            $credentials = [
+                'email' => $request->validated('email'),
+                'password' => $request->validated('mot_de_passe'),
+            ];
 
-    Route::post('formations/{formationId}/inscription', [InscriptionController::class, 'store']);
-    Route::delete('formations/{formationId}/inscription', [InscriptionController::class, 'destroy']);
-    Route::get('apprenant/formations', [InscriptionController::class, 'index']);
-    Route::put('formations/{formationId}/progression', [InscriptionController::class, 'updateProgression']);
-});
+            if (! $token = auth('api')->attempt($credentials)) {
+                return response()->json([
+                    'message' => 'Email ou mot de passe incorrect.',
+                ], 401);
+            }
+
+            $utilisateur = auth('api')->user();
+
+            return response()->json([
+                'message' => 'Connexion réussie',
+                'utilisateur' => self::utilisateurPourApi($utilisateur),
+                'token' => $token,
+                'type' => 'bearer',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Erreur connexion: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la connexion. Veuillez réessayer.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Déconnexion (invalide le token).
+     *
+     * @OA\Post(path="/auth/deconnexion", tags={"Auth"}, summary="Déconnexion", security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(response="200", description="Déconnexion réussie")
+     * )
+     */
+    public function logout(): JsonResponse
+    {
+        try {
+            auth('api')->logout();
+
+            return response()->json(['message' => 'Déconnexion réussie']);
+        } catch (Exception $e) {
+            Log::warning('Erreur déconnexion: '.$e->getMessage());
+
+            return response()->json(['message' => 'Déconnexion réussie']);
+        }
+    }
+
+    /**
+     * Utilisateur connecté.
+     *
+     * @OA\Get(path="/auth/me", tags={"Auth"}, summary="Utilisateur connecté", security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(response="200", description="Données utilisateur"),
+     *     @OA\Response(response="401", description="Non authentifié")
+     * )
+     */
+    public function me(): JsonResponse
+    {
+        $utilisateur = auth('api')->user();
+
+        if (! $utilisateur) {
+            return response()->json(['message' => 'Utilisateur non authentifié.'], 401);
+        }
+
+        return response()->json([
+            'utilisateur' => self::utilisateurPourApi($utilisateur),
+        ]);
+    }
+
+    /**
+     * Rafraîchir le token.
+     *
+     * @OA\Post(path="/auth/refresh", tags={"Auth"}, summary="Rafraîchir le token", security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(response="200", description="Nouveau token"),
+     *     @OA\Response(response="401", description="Token invalide ou expiré")
+     * )
+     */
+    public function refresh(): JsonResponse
+    {
+        try {
+            $token = auth('api')->refresh();
+
+            return response()->json([
+                'message' => 'Token rafraîchi',
+                'token' => $token,
+                'type' => 'bearer',
+            ]);
+        } catch (Exception $e) {
+            Log::error('Erreur refresh token: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'Impossible de rafraîchir le token. Veuillez vous reconnecter.',
+            ], 401);
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function utilisateurPourApi(Utilisateur $u): array
+    {
+        return [
+            'id' => $u->id,
+            'email' => $u->email,
+            'nom' => $u->nom,
+            'prenom' => $u->prenom,
+            'role' => $u->role,
+        ];
+    }
+}
 ```
 
-Pour `update` et `destroy` le paramètre de route est `{formation}` : dans le contrôleur utiliser `(UpdateFormationRequest $request, int $formation)` puis `Formation::find($formation)`.
+### `app/Http/Controllers/Api/CategorieFormationController.php`
+
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use OpenApi\Annotations as OA;
+use App\Models\CategorieFormation;
+use Illuminate\Http\JsonResponse;
+
+/**
+ * Simple liste des catégories (domaines). Pas d'auth, utilisé par le front pour le select "catégorie" dans le formulaire d'ajout.
+ */
+class CategorieFormationController extends Controller
+{
+    /**
+     * Liste des catégories triées par libellé.
+     *
+     * @OA\Get(path="/categories", tags={"Catégories"}, summary="Liste des catégories",
+     *     @OA\Response(response="200", description="Liste des catégories de formations")
+     * )
+     */
+    public function index(): JsonResponse
+    {
+        // Liste publique : pas d'authentification requise (pour le formulaire d'ajout de formation)
+        $categories = CategorieFormation::orderBy('libelle')->get(['id', 'libelle']);
+
+        return response()->json(['categories' => $categories]);
+    }
+}
+```
+
+### `app/Http/Controllers/Api/InscriptionController.php`
+
+**Explication :** uniquement pour **participants** (middleware `apprenant`). `index` renvoie les **formations** avec `progression` et `date_inscription` fusionnées depuis la ligne d’inscription.
+
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Formation;
+use App\Models\Inscription;
+use App\Services\ActivityLogService;
+use Illuminate\Http\JsonResponse;
+
+/**
+ * Inscriptions apprenants (middleware : rôle participant).
+ */
+class InscriptionController extends Controller
+{
+    public function store(int $formationId): JsonResponse
+    {
+        $userId = (int) auth()->id();
+
+        $formation = Formation::find($formationId);
+        if (! $formation) {
+            return response()->json(['message' => 'Formation introuvable'], 404);
+        }
+
+        $exists = Inscription::where('utilisateur_id', $userId)->where('formation_id', $formationId)->exists();
+        if ($exists) {
+            return response()->json(['message' => 'Vous êtes déjà inscrit à cette formation.'], 422);
+        }
+
+        Inscription::create([
+            'utilisateur_id' => $userId,
+            'formation_id' => $formationId,
+            'progression' => 0,
+        ]);
+
+        app(ActivityLogService::class)->logCourseEnrollment($userId, $formationId);
+
+        return response()->json(['message' => 'Inscription enregistrée.'], 201);
+    }
+
+    public function destroy(int $formationId): JsonResponse
+    {
+        $userId = (int) auth()->id();
+
+        $inscription = Inscription::where('utilisateur_id', $userId)->where('formation_id', $formationId)->first();
+        if (! $inscription) {
+            return response()->json(['message' => 'Inscription introuvable.'], 404);
+        }
+
+        $inscription->delete();
+
+        return response()->json(['message' => 'Désinscription effectuée.']);
+    }
+
+    public function index(): JsonResponse
+    {
+        $userId = (int) auth()->id();
+
+        $inscriptions = Inscription::where('utilisateur_id', $userId)
+            ->with(['formation.formateur:id,nom,prenom', 'formation.categorie:id,libelle'])
+            ->orderByDesc('date_inscription')
+            ->get();
+
+        $formations = $inscriptions->map(function (Inscription $ins) {
+            $f = $ins->formation;
+            $f->progression = $ins->progression;
+            $f->date_inscription = $ins->date_inscription;
+
+            return $f;
+        });
+
+        return response()->json(['formations' => $formations]);
+    }
+
+    public function updateProgression(int $formationId): JsonResponse
+    {
+        $userId = (int) auth()->id();
+
+        $inscription = Inscription::where('utilisateur_id', $userId)->where('formation_id', $formationId)->first();
+        if (! $inscription) {
+            return response()->json(['message' => 'Inscription introuvable.'], 404);
+        }
+
+        $progression = (int) request()->input('progression', 0);
+        $progression = max(0, min(100, $progression));
+        $inscription->update(['progression' => $progression]);
+
+        return response()->json(['message' => 'Progression enregistrée', 'progression' => $inscription->progression]);
+    }
+}
+```
+
+### `app/Http/Controllers/Api/FormationController.php`
+
+**Explication :**  
+- **index** : catalogue paginé ; si un **formateur** est connecté **sans** `?id_formateur=`, on ne liste que **ses** formations.  
+- **show** : détail public ; **pas** de compteur de vues.  
+- **store** : mappe `title`→`nom`, `duration`→`duree_heures`, `price`→`prix` ; `id_formateur` = user courant ; image optionnelle dans `storage/app/public/formations`.  
+- **update** : propriétaire uniquement ; remplacement d’image possible (POST multipart).  
+- **destroy** : suppression disque + ligne BDD.
+
+*(Le fichier fait ~350 lignes ; il est recopié intégralement ci-dessous.)*
+
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreFormationRequest;
+use App\Http\Requests\UpdateFormationRequest;
+use App\Models\CategorieFormation;
+use App\Models\Formation;
+use App\Services\ActivityLogService;
+use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+/**
+ * CRUD des formations. Index = liste paginée avec meta (pour le front), show = détail.
+ * Store : le front envoie title, description, price, duration, level (et optionnellement id_categorie, image).
+ * On mappe title -> nom, duration -> duree_heures, price -> prix, et on prend id_formateur depuis l'utilisateur connecté.
+ * Update : pareil, avec PUT en JSON ou POST en FormData si on envoie une nouvelle image.
+ */
+class FormationController extends Controller
+{
+    /**
+     * Liste des formations (paginée, avec filtres optionnels).
+     *
+     * @OA\Get(path="/formations", tags={"Formations"}, summary="Liste des formations", security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id_formateur", in="query", description="Filtrer par formateur", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="id_categorie", in="query", description="Filtrer par catégorie", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="statut", in="query", description="Filtrer par statut", @OA\Schema(type="string", enum={"En Cours","Terminé"})),
+     *     @OA\Parameter(name="page", in="query", description="Numéro de page (défaut: 1)", @OA\Schema(type="integer", default=1)),
+     *     @OA\Parameter(name="per_page", in="query", description="Nombre par page (défaut: 15, max: 50)", @OA\Schema(type="integer", default=15)),
+     *
+     *     @OA\Response(response="200", description="Liste paginée des formations",
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="formations", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="per_page", type="integer", example=15),
+     *                 @OA\Property(property="total", type="integer", example=73)
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $query = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle'])
+            ->withCount('inscriptions');
+
+        $user = auth()->user();
+        if ($user && $user->role === 'formateur' && ! $request->has('id_formateur')) {
+            $query->where('id_formateur', $user->id);
+        }
+
+        if ($request->filled('id_formateur')) {
+            $query->where('id_formateur', $request->id_formateur);
+        }
+        if ($request->filled('id_categorie')) {
+            $query->where('id_categorie', $request->id_categorie);
+        }
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+        if ($request->filled('level')) {
+            $query->where('level', $request->level);
+        }
+        if ($request->filled('recherche')) {
+            $term = $request->recherche;
+            $query->where(function ($q) use ($term) {
+                $q->where('nom', 'like', '%'.$term.'%')
+                    ->orWhere('description', 'like', '%'.$term.'%');
+            });
+        }
+
+        $paginator = $query->orderBy('id', 'desc')->paginate(
+            min((int) $request->input('per_page', 15), 50)
+        );
+
+        return response()->json([
+            'formations' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Détail d'une formation (catalogue, page formation).
+     */
+    public function show(int $id): JsonResponse
+    {
+        $formation = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle'])
+            ->withCount('inscriptions')
+            ->find($id);
+
+        if (! $formation) {
+            return response()->json(['message' => 'Formation introuvable'], 404);
+        }
+
+        return response()->json(['formation' => $formation]);
+    }
+
+    /**
+     * Créer une formation.
+     * Payload : title, description, price, duration, level (obligatoires), id_categorie (optionnel), image (optionnel en multipart).
+     * L'id_formateur est récupéré via l'utilisateur authentifié ; ne jamais l'envoyer depuis le front.
+     *
+     * @OA\Post(path="/formations", tags={"Formations"}, summary="Créer une formation", security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(required=true,
+     *
+     *         @OA\MediaType(mediaType="application/json",
+     *
+     *             @OA\Schema(required={"title","description","price","duration","level"},
+     *
+     *                 @OA\Property(property="title", type="string", maxLength=200, example="Introduction à React"),
+     *                 @OA\Property(property="description", type="string", maxLength=2000, example="Apprenez les bases de React."),
+     *                 @OA\Property(property="price", type="number", minimum=0, example=199.99),
+     *                 @OA\Property(property="duration", type="number", minimum=0, example=24),
+     *                 @OA\Property(property="level", type="string", enum={"beginner","intermediate","advanced"}, example="beginner"),
+     *                 @OA\Property(property="id_categorie", type="integer", nullable=true, description="Optionnel ; si absent, première catégorie utilisée")
+     *             )
+     *         ),
+     *
+     *         @OA\MediaType(mediaType="multipart/form-data",
+     *
+     *             @OA\Schema(required={"title","description","price","duration","level"},
+     *
+     *                 @OA\Property(property="title", type="string", maxLength=200),
+     *                 @OA\Property(property="description", type="string", maxLength=2000),
+     *                 @OA\Property(property="price", type="number", minimum=0),
+     *                 @OA\Property(property="duration", type="number", minimum=0),
+     *                 @OA\Property(property="level", type="string", enum={"beginner","intermediate","advanced"}),
+     *                 @OA\Property(property="id_categorie", type="integer", nullable=true),
+     *                 @OA\Property(property="image", type="string", format="binary", description="Image optionnelle (jpeg, png, jpg, gif, webp, max 2 Mo)")
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response="201", description="Formation créée avec succès"),
+     *     @OA\Response(response="401", description="Token absent"),
+     *     @OA\Response(response="403", description="Token invalide ou accès réservé aux formateurs"),
+     *     @OA\Response(response="422", description="Erreur de validation")
+     * )
+     */
+    public function store(StoreFormationRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        // id_formateur vient toujours du user connecté, jamais du front
+        $data['id_formateur'] = $request->user()->id;
+        // Mapping des noms de champs front (title, duration, price) vers la BDD (nom, duree_heures, prix)
+        $data['nom'] = $data['title'];
+        $data['duree_heures'] = $data['duration'];
+        $data['prix'] = $data['price'];
+        $data['id_categorie'] = $data['id_categorie'] ?? CategorieFormation::first()?->id;
+        if ($data['id_categorie'] === null) {
+            return response()->json([
+                'message' => 'Aucune catégorie disponible. Créez d\'abord une catégorie de formation.',
+            ], 422);
+        }
+        $data['statut'] = 'En Cours';
+        unset($data['title'], $data['duration'], $data['price'], $data['image']);
+
+        // Upload image optionnel : stockage dans storage/app/public/formations avec nom UUID
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+            $path = $file->storeAs('formations', $filename, 'public');
+            $data['image_url'] = '/storage/'.$path;
+        }
+
+        $formation = Formation::create($data);
+
+        $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle']);
+
+        app(ActivityLogService::class)->logCourseCreation($formation->id, (int) $request->user()->id);
+
+        return response()->json([
+            'message' => 'Formation créée avec succès',
+            'formation' => $this->formationPourReponseApi($formation),
+        ], 201);
+    }
+
+    /**
+     * Modifier une formation (PUT JSON ou POST multipart si image).
+     * Réponse alignée sur store : formation avec title, description, price, duration, level.
+     *
+     * @OA\Put(path="/formations/{id}", tags={"Formations"}, summary="Modifier une formation", security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\RequestBody(
+     *
+     *         @OA\JsonContent(
+     *
+     *             @OA\Property(property="id_categorie", type="integer"),
+     *             @OA\Property(property="nom", type="string"),
+     *             @OA\Property(property="description", type="string", maxLength=2000),
+     *             @OA\Property(property="duree_heures", type="number"),
+     *             @OA\Property(property="prix", type="number"),
+     *             @OA\Property(property="level", type="string", enum={"beginner","intermediate","advanced"}),
+     *             @OA\Property(property="statut", type="string", enum={"En Cours","Terminé"})
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response="200", description="Formation mise à jour (réponse enrichie comme store)"),
+     *     @OA\Response(response="403", description="Formation appartenant à un autre formateur"),
+     *     @OA\Response(response="404", description="Formation introuvable"),
+     *     @OA\Response(response="422", description="Erreur de validation")
+     * )
+     */
+    public function update(UpdateFormationRequest $request, Formation $formation): JsonResponse
+    {
+        if ($formation->id_formateur !== (int) $request->user()->id) {
+            return response()->json([
+                'message' => 'Vous ne pouvez modifier que vos propres formations.',
+            ], 403);
+        }
+
+        $oldValues = $formation->only(['nom', 'description', 'level', 'statut', 'duree_heures', 'prix']);
+
+        try {
+            $data = $request->validated();
+            unset($data['image'], $data['image_url']);
+
+            // Si nouvelle image : suppression de l'ancienne puis enregistrement de la nouvelle
+            if ($request->hasFile('image')) {
+                self::deleteStoredImageFile($formation->getRawOriginal('image_url'));
+
+                $file = $request->file('image');
+                $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+                $path = $file->storeAs('formations', $filename, 'public');
+                $data['image_url'] = '/storage/'.$path;
+            }
+
+            $formation->update($data);
+            $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle']);
+
+            $newValues = $formation->only(['nom', 'description', 'level', 'statut', 'duree_heures', 'prix']);
+            app(ActivityLogService::class)->logCourseUpdate(
+                (int) $formation->id,
+                (int) $request->user()->id,
+                $oldValues,
+                $newValues
+            );
+
+            return response()->json([
+                'message' => 'Formation mise à jour',
+                'formation' => $this->formationPourReponseApi($formation),
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la mise à jour.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Supprimer une formation.
+     *
+     * @OA\Delete(path="/formations/{id}", tags={"Formations"}, summary="Supprimer une formation", security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
+     *     @OA\Response(response="200", description="Formation supprimée"),
+     *     @OA\Response(response="403", description="Formation appartenant à un autre formateur"),
+     *     @OA\Response(response="404", description="Formation introuvable")
+     * )
+     */
+    public function destroy(Formation $formation): JsonResponse
+    {
+        if ($formation->id_formateur !== (int) auth()->id()) {
+            return response()->json([
+                'message' => 'Vous ne pouvez supprimer que vos propres formations.',
+            ], 403);
+        }
+
+        try {
+            $formationId = $formation->id;
+            $userId = (int) auth()->id();
+
+            self::deleteStoredImageFile($formation->getRawOriginal('image_url'));
+
+            $formation->delete();
+
+            app(ActivityLogService::class)->logCourseDeletion($formationId, $userId);
+
+            return response()->json(['message' => 'Formation supprimée']);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la suppression.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Réponse JSON alignée avec le front : champs title, price, duration en plus des colonnes BDD.
+     *
+     * @return array<string, mixed>
+     */
+    private function formationPourReponseApi(Formation $formation): array
+    {
+        return array_merge($formation->toArray(), [
+            'title' => $formation->nom,
+            'description' => $formation->description,
+            'price' => (float) $formation->prix,
+            'duration' => (float) $formation->duree_heures,
+            'level' => $formation->level,
+        ]);
+    }
+
+    /** Supprime le fichier image sur le disque public (valeur telle qu’en BDD, pas l’URL JSON de l’accessor). */
+    private static function deleteStoredImageFile(?string $rawImageUrlFromDb): void
+    {
+        $path = self::imageUrlToStoragePath($rawImageUrlFromDb);
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+
+    /**
+     * Convertit une image_url (ex: /storage/formations/xxx.jpg) en chemin de stockage (formations/xxx.jpg).
+     */
+    private static function imageUrlToStoragePath(?string $imageUrl): ?string
+    {
+        if (! $imageUrl) {
+            return null;
+        }
+        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
+            $path = parse_url($imageUrl, PHP_URL_PATH);
+            $imageUrl = is_string($path) ? $path : '';
+        }
+        $imageUrl = ltrim($imageUrl, '/');
+        if (str_starts_with($imageUrl, 'storage/')) {
+            return substr($imageUrl, 8);
+        }
+
+        return $imageUrl;
+    }
+}
+```
 
 ---
 
-## 9. Service ActivityLog
+## 9. `ActivityLogService`
 
-Fichier : `app/Services/ActivityLogService.php`. Enregistre les événements (vue, inscription, création, mise à jour, suppression de formation) dans les logs Laravel (format structuré).
+**Explication :** journalise création / mise à jour / suppression de formation et inscriptions (fichier de log Laravel `storage/logs/laravel.log` via canal `single`).
 
 ```php
 <?php
@@ -798,18 +1857,13 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Enregistre les événements importants pour l'historisation (CDC : MongoDB activity_logs).
+ * Si MONGODB_URI est configuré, pourrait écrire dans une collection MongoDB.
+ * Par défaut, écrit dans le log Laravel au format structuré.
+ */
 class ActivityLogService
 {
-    public function logCourseView(?int $userId, int $courseId): void
-    {
-        $this->log([
-            'event' => 'course_view',
-            'user_id' => $userId,
-            'course_id' => $courseId,
-            'timestamp' => now()->toIso8601String(),
-        ]);
-    }
-
     public function logCourseEnrollment(int $userId, int $courseId): void
     {
         $this->log([
@@ -861,33 +1915,175 @@ class ActivityLogService
 
 ---
 
-## 10. Config auth (JWT)
+## 10. `config/auth.php`
 
-Dans `config/auth.php` :
-
-- **Guards** : guard `api` avec driver `jwt` et provider `utilisateurs`.
-- **Providers** : provider `utilisateurs` avec driver `eloquent` et model `App\Models\Utilisateur`.
-
-Exemple de configuration :
+**Explication :** le guard **`api`** utilise le driver **`jwt`** et le provider **`utilisateurs`** → modèle **`App\Models\Utilisateur`**.
 
 ```php
-'guards' => [
-    'api' => [
-        'driver' => 'jwt',
-        'provider' => 'utilisateurs',
-    ],
-],
+<?php
 
-'providers' => [
-    'utilisateurs' => [
-        'driver' => 'eloquent',
-        'model' => App\Models\Utilisateur::class,
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Defaults
+    |--------------------------------------------------------------------------
+    |
+    | This option defines the default authentication "guard" and password
+    | reset "broker" for your application. You may change these values
+    | as required, but they're a perfect start for most applications.
+    |
+    */
+
+    'defaults' => [
+        'guard' => env('AUTH_GUARD', 'web'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
-],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Guards
+    |--------------------------------------------------------------------------
+    |
+    | Next, you may define every authentication guard for your application.
+    | Of course, a great default configuration has been defined for you
+    | which utilizes session storage plus the Eloquent user provider.
+    |
+    | All authentication guards have a user provider, which defines how the
+    | users are actually retrieved out of your database or other storage
+    | system used by your application. Typically, Eloquent is utilized.
+    |
+    | Supported: "session"
+    |
+    */
+
+    'guards' => [
+        'web' => [
+            'driver' => 'session',
+            'provider' => 'utilisateurs',
+        ],
+        'api' => [
+            'driver' => 'jwt',
+            'provider' => 'utilisateurs',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Providers
+    |--------------------------------------------------------------------------
+    |
+    | All authentication guards have a user provider, which defines how the
+    | users are actually retrieved out of your database or other storage
+    | system used by your application. Typically, Eloquent is utilized.
+    |
+    | If you have multiple user tables or models you may configure multiple
+    | providers to represent the model / table. These providers may then
+    | be assigned to any extra authentication guards you have defined.
+    |
+    | Supported: "database", "eloquent"
+    |
+    */
+
+    'providers' => [
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+        'utilisateurs' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Utilisateur::class,
+        ],
+
+        // 'users' => [
+        //     'driver' => 'database',
+        //     'table' => 'users',
+        // ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resetting Passwords
+    |--------------------------------------------------------------------------
+    |
+    | These configuration options specify the behavior of Laravel's password
+    | reset functionality, including the table utilized for token storage
+    | and the user provider that is invoked to actually retrieve users.
+    |
+    | The expiry time is the number of minutes that each reset token will be
+    | considered valid. This security feature keeps tokens short-lived so
+    | they have less time to be guessed. You may change this as needed.
+    |
+    | The throttle setting is the number of seconds a user must wait before
+    | generating more password reset tokens. This prevents the user from
+    | quickly generating a very large amount of password reset tokens.
+    |
+    */
+
+    'passwords' => [
+        'users' => [
+            'provider' => 'users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Confirmation Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the number of seconds before a password confirmation
+    | window expires and users are asked to re-enter their password via the
+    | confirmation screen. By default, the timeout lasts for three hours.
+    |
+    */
+
+    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+];
 ```
-
-Package : `tymon/jwt-auth`. Clé JWT et TTL dans `.env` (JWT_SECRET, JWT_TTL, etc.).
 
 ---
 
-En suivant ce guide et en recopiant les extraits de code dans les bons fichiers, vous recréez le backend SkillHub depuis zéro avec les mêmes comportements et la même API.
+## 11. `Controller.php` (base)
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+/**
+ * Contrôleur de base. Tous les contrôleurs API en héritent.
+ */
+abstract class Controller
+{
+}
+```
+
+---
+
+## 12. Tableau des endpoints
+
+| Méthode | Chemin (après `/api`) | Auth | Rôle |
+|--------|------------------------|------|------|
+| POST | `auth/inscription` | Non | — |
+| POST | `auth/connexion` | Non | — |
+| POST | `auth/deconnexion` | JWT | — |
+| GET | `auth/me` | JWT | — |
+| POST | `auth/refresh` | JWT | — |
+| GET | `categories` | Non | — |
+| GET | `formations` | Optionnel | Catalogue ; filtre auto si formateur |
+| GET | `formations/{id}` | Non | — |
+| POST | `formations` | JWT | formateur |
+| PUT / POST | `formations/{formation}` | JWT | formateur (propriétaire) |
+| DELETE | `formations/{formation}` | JWT | formateur (propriétaire) |
+| POST | `formations/{formationId}/inscription` | JWT | participant |
+| DELETE | `formations/{formationId}/inscription` | JWT | participant |
+| GET | `apprenant/formations` | JWT | participant |
+| PUT | `formations/{formationId}/progression` | JWT | participant |
+
+---
+
+**Note :** ce guide est une **copie de référence**. La **source de vérité** reste les fichiers dans le dépôt ; en cas de divergence après un commit, c’est le fichier PHP qui prime.

@@ -11,16 +11,6 @@ use Illuminate\Support\Facades\Log;
  */
 class ActivityLogService
 {
-    public function logCourseView(?int $userId, int $courseId): void
-    {
-        $this->log([
-            'event' => 'course_view',
-            'user_id' => $userId,
-            'course_id' => $courseId,
-            'timestamp' => now()->toIso8601String(),
-        ]);
-    }
-
     public function logCourseEnrollment(int $userId, int $courseId): void
     {
         $this->log([

@@ -27,22 +27,16 @@
   font-size: 1.1rem;
 }
 
-.footer-skillhub .footer-col h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.footer-skillhub .footer-brand {
+  margin-bottom: 12px;
 }
 
-.footer-skillhub .footer-col .logo-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--skillhub-blue);
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 16px;
+.footer-skillhub .footer-logo-img {
+  height: 48px;
+  width: auto;
+  max-width: 200px;
+  display: block;
+  object-fit: contain;
 }
 
 .footer-skillhub .footer-col p {
@@ -77,22 +71,28 @@
 }
 
 .footer-skillhub .socials a {
-  width: 36px;
-  height: 36px;
-  background: #222;
-  color: #ccc;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  font-size: 14px;
-  transition: 0.3s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  padding: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.footer-skillhub .socials a img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .footer-skillhub .socials a:hover {
-  background: var(--skillhub-blue);
-  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35);
 }
 
 .footer-skillhub .footer-bottom {
@@ -119,7 +119,8 @@
     max-width: 340px;
   }
 
-  .footer-skillhub .footer-col h3 {
+  .footer-skillhub .footer-brand {
+    display: flex;
     justify-content: center;
   }
 }

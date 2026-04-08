@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategorieFormationController;
 use App\Http\Controllers\Api\FormationController;
 use App\Http\Controllers\Api\InscriptionController;
-use App\Http\Controllers\Api\ModuleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,16 +35,13 @@ Route::middleware('auth:api')->group(function () {
         Route::put('formations/{formation}', [FormationController::class, 'update']);
         Route::post('formations/{formation}', [FormationController::class, 'update']);
         Route::delete('formations/{formation}', [FormationController::class, 'destroy']);
-
-        Route::get('formations/{formationId}/modules', [ModuleController::class, 'index'])->whereNumber('formationId');
-        Route::post('formations/{formationId}/modules', [ModuleController::class, 'store'])->whereNumber('formationId');
-        Route::put('modules/{id}', [ModuleController::class, 'update'])->whereNumber('id');
-        Route::delete('modules/{id}', [ModuleController::class, 'destroy'])->whereNumber('id');
     });
 
-    // Inscription / désinscription (apprenant) et formations suivies
-    Route::post('formations/{formationId}/inscription', [InscriptionController::class, 'store']);
-    Route::delete('formations/{formationId}/inscription', [InscriptionController::class, 'destroy']);
-    Route::get('apprenant/formations', [InscriptionController::class, 'index']);
-    Route::put('formations/{formationId}/progression', [InscriptionController::class, 'updateProgression']);
+    // Inscription / désinscription / progression / liste suivies : apprenants uniquement
+    Route::middleware('apprenant')->group(function () {
+        Route::post('formations/{formationId}/inscription', [InscriptionController::class, 'store']);
+        Route::delete('formations/{formationId}/inscription', [InscriptionController::class, 'destroy']);
+        Route::get('apprenant/formations', [InscriptionController::class, 'index']);
+        Route::put('formations/{formationId}/progression', [InscriptionController::class, 'updateProgression']);
+    });
 });

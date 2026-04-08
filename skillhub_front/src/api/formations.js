@@ -1,17 +1,46 @@
-// ========== formations.js : appels API formations + catégories ==========
-// Liste, détail, création, mise à jour, suppression. On utilise le token JWT dans les headers.
+// Appels API formations + catégories (JWT dans les headers quand il y a un token).
 
 import { parseJsonResponse } from "./utils";
-import { API_URL } from "../constants";
+import { API_ORIGIN, API_URL } from "../constants";
 
-// Les images sont servies par le back via /storage. Si on a une URL complète, on garde juste le path pour le proxy Vite.
-export function getImageUrl(imageUrl) {
-  if (!imageUrl) return null;
-  if (imageUrl.startsWith("http")) return new URL(imageUrl).pathname;
-  return imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+/** URL du serveur Laravel (sans /api), pour les images /storage — ex. http://localhost:8000 */
+function laravelBaseUrl() {
+  if (API_ORIGIN) return API_ORIGIN;
+  const viteApi = import.meta.env.VITE_API_URL || "";
+  if (viteApi.startsWith("http")) {
+    try {
+      return new URL(viteApi).origin;
+    } catch {
+      return "";
+    }
+  }
+  if (typeof window === "undefined") return "";
+  const { hostname } = window.location;
+  if (hostname !== "localhost" && hostname !== "127.0.0.1") return "";
+  const port = import.meta.env.VITE_LARAVEL_PORT || "8000";
+  return `http://${hostname}:${port}`;
 }
 
-// En-têtes communs : Bearer token pour l'auth. Si on envoie du JSON on met Content-Type, sinon (FormData) on ne le met pas.
+/**
+ * URL pour <img src>. L’API peut envoyer une URL complète ou /storage/…
+ * On n’utilise que le chemin puis on préfixe avec laravelBaseUrl() (sinon chemin relatif → proxy Vite).
+ */
+export function getImageUrl(imageUrl) {
+  if (imageUrl == null || String(imageUrl).trim() === "") return null;
+  let path = String(imageUrl).trim().replace(/\\/g, "/");
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    try {
+      path = new URL(path).pathname;
+    } catch {
+      return null;
+    }
+  }
+  if (!path.startsWith("/")) path = `/${path}`;
+  if (!path.startsWith("/storage")) return path;
+  const base = laravelBaseUrl();
+  return base ? `${base}${path}` : path;
+}
+
 function getAuthHeaders(json = true) {
   const token = localStorage.getItem("token");
   const headers = { ...(token && { Authorization: `Bearer ${token}` }) };
@@ -20,30 +49,22 @@ function getAuthHeaders(json = true) {
 }
 
 export const formationsApi = {
-  // Liste paginée. Envoie le token si présent (formateur voit ses formations par défaut si pas de params).
   async getFormations(params = {}) {
     const qs = new URLSearchParams(params).toString();
     const url = `${API_URL}/formations${qs ? `?${qs}` : ""}`;
     const res = await fetch(url, { headers: getAuthHeaders() });
     const json = await parseJsonResponse(res);
     if (!res.ok) throw { status: res.status, ...json };
-    return {
-      formations: json.formations ?? [],
-      meta: json.meta ?? null,
-    };
+    return { formations: json.formations ?? [], meta: json.meta ?? null };
   },
 
-  // Catalogue public : toutes les formations (sans token pour éviter le filtre formateur).
   async getFormationsCatalogue(params = {}) {
     const qs = new URLSearchParams(params).toString();
     const url = `${API_URL}/formations${qs ? `?${qs}` : ""}`;
     const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
     const json = await parseJsonResponse(res);
     if (!res.ok) throw { status: res.status, ...json };
-    return {
-      formations: json.formations ?? [],
-      meta: json.meta ?? null,
-    };
+    return { formations: json.formations ?? [], meta: json.meta ?? null };
   },
 
   async getFormation(id) {
@@ -53,7 +74,6 @@ export const formationsApi = {
     return json.formation;
   },
 
-  // Création : si on a une image on envoie en FormData, sinon en JSON. Le back attend title, description, price, duration, level...
   async createFormation(data) {
     const isFormData = data instanceof FormData;
     const res = await fetch(`${API_URL}/formations`, {
@@ -66,7 +86,6 @@ export const formationsApi = {
     return json.formation;
   },
 
-  // Mise à jour : PUT pour le JSON, POST pour FormData (quand on envoie une nouvelle image).
   async updateFormation(id, data) {
     const isFormData = data instanceof FormData;
     const res = await fetch(`${API_URL}/formations/${id}`, {
@@ -89,7 +108,6 @@ export const formationsApi = {
     return json;
   },
 
-  // Catégories pour le select "domaine" dans le formulaire d'ajout. Pas d'auth requise.
   async getCategories() {
     const res = await fetch(`${API_URL}/categories`);
     const json = await parseJsonResponse(res);
@@ -98,10 +116,8 @@ export const formationsApi = {
   },
 };
 
-// Traduction des niveaux pour l'affichage dans les cartes et le modal.
 const LEVEL_LABELS = { beginner: "Débutant", intermediate: "Intermédiaire", advanced: "Avancé" };
 
-// On transforme l'objet formation du back pour que les composants aient tout sous la main : formateur en string, domaine, date FR, levelLabel...
 export function formatFormationForDisplay(f) {
   if (!f) return null;
   const formateurNom = f.formateur
@@ -117,11 +133,10 @@ export function formatFormationForDisplay(f) {
     description: f.description || "",
     level: f.level || "",
     levelLabel: LEVEL_LABELS[f.level] || f.level || "",
-    image_url: getImageUrl(f.image_url) || f.image_url,
+    image_url: getImageUrl(f.image_url) ?? f.image_url,
   };
 }
 
-// Version simplifiée pour les petites cartes du dashboard (titre, date, statut).
 export function formatAtelierForCarte(f) {
   if (!f) return null;
   const statutMap = { "En Cours": "en-cours", Terminé: "termine", "À venir": "a-venir" };

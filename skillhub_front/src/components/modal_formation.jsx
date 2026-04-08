@@ -3,7 +3,7 @@
 // On attend la fin de onSave avant de fermer : c'est le parent qui ferme après succès, donc on ne appelle pas onClose dans handleSubmit.
 import { useState, useEffect, useRef } from "react";
 import { getMessageErreurApi } from "../api/utils";
-import { IMG_PLACEHOLDER } from "../constants";
+import FormationImage from "./FormationImage";
 import "./css/ajouter_atelier.css";
 import "./css/modal_formation.css";
 
@@ -180,13 +180,9 @@ function Modal_Formation({
         <form onSubmit={handleSubmit} className="corps-modal">
           <div className="conteneur-info-header">
             <div className="image-modal-formation-vignette">
-              <img
-                src={
-                  imagePreview ||
-                  formation.image_url ||
-                  formData.image_url ||
-                  IMG_PLACEHOLDER
-                }
+              <FormationImage
+                src={imagePreview || undefined}
+                imageUrl={formData.image_url || formation?.image_url}
                 alt={formation.nom}
               />
             </div>

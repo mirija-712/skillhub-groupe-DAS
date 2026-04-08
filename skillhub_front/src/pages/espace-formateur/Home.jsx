@@ -1,14 +1,14 @@
 // Page d'accueil après connexion : stats (total, en cours, terminés) + les 9 derniers ateliers.
 import { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/header";
-import Carte_Atelier from "../components/carte_atelier";
-import { formationsApi, formatAtelierForCarte } from "../api/formations";
-import { authApi } from "../api/auth";
+import Header from "../../components/header";
+import Carte_Atelier from "../../components/carte_atelier";
+import { formationsApi, formatAtelierForCarte } from "../../api/formations";
+import { authApi } from "../../api/auth";
 import "./css/home.css";
-import formation from "../assets/logo/icons8-less-or-equal-100.png";
-import done from "../assets/logo/icons8-done-94.png";
-import time from "../assets/logo/icons8-time-100.png";
+import formation from "../../assets/style/icons8-less-or-equal-100.png";
+import done from "../../assets/style/icons8-done-94.png";
+import time from "../../assets/style/icons8-time-100.png";
 
 function Home() {
   // État des formations chargées et métadonnées de pagination
@@ -19,21 +19,31 @@ function Home() {
 
   // Au montage on charge les formations du formateur connecté. meta.total sert pour le vrai total (même si on n'affiche que la 1ère page).
   useEffect(() => {
-    if (!utilisateur?.id) {
-      setChargement(false);
-      return;
-    }
-    formationsApi
-      .getFormations({ id_formateur: utilisateur.id, page: 1, per_page: 15 })
-      .then((data) => {
-        setFormations(data.formations ?? []);
-        setMeta(data.meta ?? null);
-      })
-      .catch(() => {
-        setFormations([]);
-        setMeta(null);
-      })
-      .finally(() => setChargement(false));
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (!utilisateur?.id) {
+        if (!cancelled) setChargement(false);
+        return;
+      }
+      try {
+        const data = await formationsApi.getFormations({ id_formateur: utilisateur.id, page: 1, per_page: 15 });
+        if (!cancelled) {
+          setFormations(data.formations ?? []);
+          setMeta(data.meta ?? null);
+        }
+      } catch {
+        if (!cancelled) {
+          setFormations([]);
+          setMeta(null);
+        }
+      } finally {
+        if (!cancelled) setChargement(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [utilisateur?.id]);
 
   // total = nombre total côté back si on a meta, sinon on se rabat sur la longueur de la liste (1ère page).
@@ -53,7 +63,7 @@ function Home() {
           <h1 className="titre-tableau-bord">Tableau de bord Formateur</h1>
 
           <div className="actions-accueil">
-            <Link to="/Gestion_Ateliers" className="bouton-ajouter-atelier">
+            <Link to="/gestion-formations" className="bouton-ajouter-atelier">
               + Créer une formation
             </Link>
           </div>

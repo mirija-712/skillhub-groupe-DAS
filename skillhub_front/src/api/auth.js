@@ -30,7 +30,7 @@ export const authApi = {
   },
 
   // Vérifie si le token est encore valide et récupère les infos de l'utilisateur connecté.
-  // Utilisé par RouteFormateur pour savoir si on peut afficher les pages formateur.
+  // Utilisé par ProtectedRoute pour valider le token et le rôle.
   async me() {
     const token = localStorage.getItem("token");
     if (!token) return null;

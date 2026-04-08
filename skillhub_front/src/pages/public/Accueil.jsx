@@ -1,10 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import NavbarPublic from "../components/NavbarPublic";
-import Footer from "../components/Footer";
-import { formationsApi, formatFormationForDisplay, getImageUrl } from "../api/formations";
-import { IMG_PLACEHOLDER } from "../constants";
+import NavbarPublic from "../../components/NavbarPublic";
+import Footer from "../../components/Footer";
+import { formationsApi, formatFormationForDisplay } from "../../api/formations";
+import FormationImage from "../../components/FormationImage";
+import iconStep1 from "../../assets/style/intelligent-person-100.png";
+import iconStep2 from "../../assets/style/graduation-100.png";
+import iconStep3 from "../../assets/style/staircase-100.png";
+import iconInnovation from "../../assets/style/innovation-100.png";
+import iconAccessibilite from "../../assets/style/liberty-100.png";
+import iconQualite from "../../assets/style/quality-100.png";
 import "./css/accueil.css";
+
+const STEPS_ICONS = [iconStep1, iconStep2, iconStep3];
+const VALEURS_ICONS = [iconInnovation, iconAccessibilite, iconQualite];
 
 const LEVEL_LABELS = { beginner: "Débutant", intermediate: "Intermédiaire", advanced: "Avancé" };
 
@@ -48,17 +57,32 @@ export default function Accueil() {
           <h2 className="skillhub-title">Comment s&apos;inscrire ?</h2>
           <div className="ma-section-grid">
             <div className="ma-section-container">
-              <div className="step-icon">1</div>
+              <div className="step-icon-wrap">
+                <div className="step-icon">
+                  <img src={STEPS_ICONS[0]} alt="" width={52} height={52} />
+                </div>
+                <span className="step-badge" aria-hidden>1</span>
+              </div>
               <h3>Première étape</h3>
               <p>Créez votre compte utilisateur, que vous soyez apprenant ou formateur.</p>
             </div>
             <div className="ma-section-container">
-              <div className="step-icon">2</div>
+              <div className="step-icon-wrap">
+                <div className="step-icon">
+                  <img src={STEPS_ICONS[1]} alt="" width={52} height={52} />
+                </div>
+                <span className="step-badge" aria-hidden>2</span>
+              </div>
               <h3>Deuxième étape</h3>
               <p>En tant qu&apos;apprenant, cherchez et choisissez vos formations. En tant que formateur, créez et gérez vos formations.</p>
             </div>
             <div className="ma-section-container">
-              <div className="step-icon">3</div>
+              <div className="step-icon-wrap">
+                <div className="step-icon">
+                  <img src={STEPS_ICONS[2]} alt="" width={52} height={52} />
+                </div>
+                <span className="step-badge" aria-hidden>3</span>
+              </div>
               <h3>Troisième étape</h3>
               <p>Profitez pleinement de nos services, disponibles à tout moment.</p>
             </div>
@@ -88,17 +112,23 @@ export default function Accueil() {
           <h2 className="skillhub-title" id="titre-valeurs">Nos valeurs</h2>
           <div className="cards-grid">
             <div className="card-skillhub">
-              <div className="card-icon">◆</div>
+              <div className="card-icon">
+                <img src={VALEURS_ICONS[0]} alt="" width={56} height={56} />
+              </div>
               <h3>Innovation</h3>
               <p>Nous créons des solutions modernes pour faciliter l&apos;apprentissage.</p>
             </div>
             <div className="card-skillhub">
-              <div className="card-icon">◇</div>
+              <div className="card-icon">
+                <img src={VALEURS_ICONS[1]} alt="" width={56} height={56} />
+              </div>
               <h3>Accessibilité</h3>
               <p>Permettre à tous d&apos;apprendre facilement, où qu&apos;ils soient.</p>
             </div>
             <div className="card-skillhub">
-              <div className="card-icon">◈</div>
+              <div className="card-icon">
+                <img src={VALEURS_ICONS[2]} alt="" width={56} height={56} />
+              </div>
               <h3>Qualité</h3>
               <p>Nous garantissons des contenus fiables et des formations professionnelles.</p>
             </div>
@@ -118,8 +148,8 @@ export default function Accueil() {
                 {formations.map((f) => (
                   <div key={f.id} className="carte-formation-accueil">
                     <div className="carte-formation-accueil-image">
-                      <img
-                        src={getImageUrl(f.image_url) || IMG_PLACEHOLDER}
+                      <FormationImage
+                        imageUrl={f.image_url}
                         alt=""
                         loading="lazy"
                       />

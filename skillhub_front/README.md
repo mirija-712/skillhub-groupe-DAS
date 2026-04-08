@@ -22,7 +22,7 @@ skillhub_front/
 │   │   ├── formations.js                 # getFormations (paginé), getFormation, create, update, delete, getCategories
 │   │   └── utils.js                      # parseJsonResponse, getMessageErreurApi (messages 401, 403, 422…)
 │   ├── components/                       # Composants réutilisables
-│   │   ├── RouteFormateur.jsx            # Garde de route : redirige si pas formateur
+│   │   ├── ProtectedRoute.jsx            # Garde de route : token + rôle (participant ou formateur)
 │   │   ├── header.jsx                    # Barre de navigation + bouton Déconnexion
 │   │   ├── carte_atelier.jsx             # Carte atelier (titre, date, statut) pour le dashboard
 │   │   ├── ajouter_ateliers.jsx          # Modal d’ajout de formation (titre, description, prix, durée, niveau, catégorie, image)
@@ -36,11 +36,11 @@ skillhub_front/
 │   │   ├── login.jsx                     # Page de connexion
 │   │   ├── inscription.jsx               # Page d’inscription (formateurs, prénom optionnel)
 │   │   └── css/
-│   ├── pages/                            # Pages protégées (formateur)
-│   │   ├── home.jsx                      # Tableau de bord (stats avec meta.total + ateliers récents)
-│   │   ├── mes_ateliers.jsx              # Catalogue formations (filtres recherche/prix, pagination)
-│   │   ├── gestion_ateliers.jsx          # CRUD formations (filtres, pagination, modals)
-│   │   └── css/
+│   ├── pages/                            # Voir pages/README.md
+│   │   ├── public/                       # Accueil, catalogue, détail formation (+ css/)
+│   │   ├── espace-client/                # Apprenant : dashboard, apprendre (+ css/)
+│   │   ├── espace-formateur/             # Formateur : Home, MesAteliers, GestionAteliers (+ css/)
+│   │   └── README.md
 │   ├── constants.js                      # API_URL, IMG_PLACEHOLDER
 │   ├── App.jsx                           # Définition des routes
 │   ├── main.jsx                          # Point d’entrée (React + BrowserRouter)
@@ -92,10 +92,12 @@ skillhub_front/
 | `/` | Connexion | Public | Email + mot de passe. Redirection vers `/dashboard` si succès. Participants → 403. |
 | `/inscription` | Inscription | Public | Email, mot de passe, nom ; prénom optionnel. Rôle « formateur ». Redirection vers `/` après succès. |
 | `/dashboard` | Tableau de bord | Formateur | Stats (total ateliers via meta, en cours, terminés) et grille des ateliers récents (première page). |
-| `/Mes_Ateliers` | Mes ateliers | Formateur | Liste paginée des formations (filtres recherche + prix min/max). Cartes avec badge niveau, prix en overlay, domaine. Bouton « Voir la formation » → modal lecture seule. |
-| `/Gestion_Ateliers` | Gestion ateliers | Formateur | Liste paginée des formations du formateur. Filtres, boutons Ajouter / Modifier / Supprimer. Modals création, détail et modification (sauvegarde async, fermeture après succès). |
+| `/mes-formations` | Mes formations | Formateur | Liste paginée des formations (filtres recherche + prix min/max). Cartes avec badge niveau, prix en overlay, domaine. Bouton « Voir la formation » → modal lecture seule. |
+| `/gestion-formations` | Gestion ateliers | Formateur | Liste paginée des formations du formateur. Filtres, boutons Ajouter / Modifier / Supprimer. Modals création, détail et modification (sauvegarde async, fermeture après succès). |
 
-**RouteFormateur** : appelle `/api/auth/me` pour valider le token. Si non connecté ou non formateur → redirection vers `/`.
+Les anciennes URLs `/Mes_Ateliers` et `/Gestion_Ateliers` redirigent vers les chemins ci-dessus.
+
+**ProtectedRoute** : appelle `/api/auth/me` pour valider le token et le rôle. Si non connecté ou mauvais rôle → redirection vers `/connexion`.
 
 ---
 
@@ -128,6 +130,6 @@ skillhub_front/
 ## 9. Résumé
 
 - **Auth** : `src/connexion/` (login, inscription ; prénom optionnel).
-- **Pages** : `src/pages/` (home, mes_ateliers, gestion_ateliers) avec pagination et filtres.
-- **Composants** : `src/components/` (header, cartes, modals, RouteFormateur). Cartes formation : badge niveau sur l’image, prix en overlay, badge domaine ; modal détail avec badges (prix, niveau, statut) uniquement en mode lecture.
+- **Pages** : `src/pages/public/`, `espace-client/`, `espace-formateur/` (voir `pages/README.md`).
+- **Composants** : `src/components/` (header, cartes, modals, ProtectedRoute). Cartes formation : badge niveau sur l’image, prix en overlay, badge domaine ; modal détail avec badges (prix, niveau, statut) uniquement en mode lecture.
 - **API** : `src/api/` (auth, formations, utils avec gestion des erreurs par code HTTP).

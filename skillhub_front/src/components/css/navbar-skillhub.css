@@ -16,6 +16,35 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  min-height: 52px;
+}
+
+/* Logo + Accueil + Formations alignés à gauche */
+.navbar-skillhub .navbar-start {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2rem);
+  min-width: 0;
+}
+
+.navbar-skillhub .nav-main-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Actions à droite : compte + déconnexion / connexion */
+.navbar-skillhub .navbar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.navbar-skillhub .nav-list-actions-desktop {
+  display: flex;
 }
 
 .navbar-skillhub .navbar-logo {
@@ -23,31 +52,19 @@
   align-items: center;
   text-decoration: none;
   color: #333;
-  font-size: 22px;
-  font-weight: 600;
   gap: 8px;
 }
 
-.navbar-skillhub .logo-text {
-  font-size: 22px;
-  font-weight: 600;
-}
-
 .navbar-skillhub .navbar-logo:hover {
-  color: #333;
+  opacity: 0.92;
 }
 
-.navbar-skillhub .logo-icon {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, var(--skillhub-blue) 0%, var(--skillhub-blue-dark) 100%);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 18px;
+.navbar-skillhub .navbar-logo-img {
+  height: 48px;
+  width: auto;
+  max-width: min(200px, 42vw);
+  display: block;
+  object-fit: contain;
 }
 
 .navbar-skillhub .nav-list {
@@ -66,10 +83,12 @@
   transition: 0.3s;
 }
 
+/* Vert au survol : liens texte uniquement (Connexion / S'inscrire n'ont plus la classe Bootstrap .nav-link) */
 .navbar-skillhub .nav-link:hover {
   color: var(--skillhub-green);
 }
 
+/* Sans la classe Bootstrap .nav-link pour éviter background:none et couleurs qui écrasent l'orange */
 .navbar-skillhub .btn-profile {
   padding: 8px 20px;
   border: 1px solid var(--skillhub-blue);
@@ -81,6 +100,8 @@
   font-weight: 500;
   text-decoration: none;
   display: inline-block;
+  font-size: inherit;
+  line-height: 1.5;
 }
 
 .navbar-skillhub .btn-profile:hover {
@@ -126,6 +147,11 @@
   padding: 8px;
 }
 
+/* Panneau mobile : masqué sur grand écran */
+.navbar-skillhub .nav-list-wrap {
+  display: none;
+}
+
 .navbar-skillhub .navbar-toggle span {
   width: 28px;
   height: 3px;
@@ -134,15 +160,24 @@
 }
 
 @media (max-width: 768px) {
+  .navbar-skillhub .nav-main-left {
+    display: none;
+  }
+
+  .navbar-skillhub .nav-list-actions-desktop {
+    display: none;
+  }
+
   .navbar-skillhub .navbar-toggle {
     display: flex;
   }
 
   .navbar-skillhub .nav-list-wrap {
     position: absolute;
-    top: 100%;
-    right: 5%;
-    left: 5%;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    min-width: 220px;
     background: #fff;
     padding: 15px;
     border-radius: 10px;
@@ -156,8 +191,9 @@
     display: flex;
   }
 
-  .navbar-skillhub .nav-list {
+  .navbar-skillhub .nav-list-wrap .nav-list {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
 }

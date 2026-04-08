@@ -1,17 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import NavbarPublic from "../components/NavbarPublic";
-import Footer from "../components/Footer";
-import { formationsApi, formatFormationForDisplay, getImageUrl } from "../api/formations";
-import { API_URL } from "../constants";
-import { IMG_PLACEHOLDER } from "../constants";
+import NavbarPublic from "../../components/NavbarPublic";
+import Footer from "../../components/Footer";
+import { formationsApi, formatFormationForDisplay } from "../../api/formations";
+import { API_URL } from "../../constants";
+import FormationImage from "../../components/FormationImage";
 import "./css/catalogue.css";
 
 const LEVEL_LABELS = { beginner: "Débutant", intermediate: "Intermédiaire", advanced: "Avancé" };
 
 export default function FormationsCatalogue() {
   const [formations, setFormations] = useState([]);
-  const [meta, setMeta] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [recherche, setRecherche] = useState("");
   const [categorieId, setCategorieId] = useState("");
@@ -26,23 +25,30 @@ export default function FormationsCatalogue() {
   }, []);
 
   useEffect(() => {
-    setChargement(true);
-    const params = { per_page: 20, page: 1 };
-    if (recherche.trim()) params.recherche = recherche.trim();
-    if (categorieId) params.id_categorie = categorieId;
-    if (niveau) params.level = niveau;
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setChargement(true);
+      const params = { per_page: 20, page: 1 };
+      if (recherche.trim()) params.recherche = recherche.trim();
+      if (categorieId) params.id_categorie = categorieId;
+      if (niveau) params.level = niveau;
 
-    formationsApi
-      .getFormationsCatalogue(params)
-      .then((data) => {
-        setFormations((data.formations ?? []).map(formatFormationForDisplay).filter(Boolean));
-        setMeta(data.meta ?? null);
-      })
-      .catch(() => {
-        setFormations([]);
-        setMeta(null);
-      })
-      .finally(() => setChargement(false));
+      try {
+        const data = await formationsApi.getFormationsCatalogue(params);
+        if (!cancelled) {
+          setFormations((data.formations ?? []).map(formatFormationForDisplay).filter(Boolean));
+        }
+      } catch {
+        if (!cancelled) setFormations([]);
+      } finally {
+        if (!cancelled) setChargement(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [recherche, categorieId, niveau]);
 
   return (
@@ -92,7 +98,7 @@ export default function FormationsCatalogue() {
               {formations.map((f) => (
                 <div key={f.id} className="carte-catalogue">
                   <div className="carte-catalogue-image">
-                    <img src={getImageUrl(f.image_url) || IMG_PLACEHOLDER} alt="" loading="lazy" />
+                    <FormationImage imageUrl={f.image_url} alt="" loading="lazy" />
                   </div>
                   <div className="carte-catalogue-body">
                     <h3>{f.nom || f.title}</h3>
@@ -100,7 +106,6 @@ export default function FormationsCatalogue() {
                     <span className="badge-niveau">{LEVEL_LABELS[f.level] || f.levelLabel}</span>
                     <div className="carte-catalogue-stats">
                       <span>{f.inscriptions_count ?? 0} apprenant(s)</span>
-                      <span>{f.nombre_de_vues ?? 0} vues</span>
                     </div>
                     <Link to={`/formation/${f.id}`} className="btn btn-primary btn-sm">
                       Voir détail

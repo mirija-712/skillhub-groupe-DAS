@@ -7,7 +7,6 @@ use App\Http\Requests\StoreFormationRequest;
 use App\Http\Requests\UpdateFormationRequest;
 use App\Models\CategorieFormation;
 use App\Models\Formation;
-use App\Models\Module;
 use App\Services\ActivityLogService;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -23,18 +22,21 @@ use Illuminate\Support\Str;
  */
 class FormationController extends Controller
 {
-
     /**
      * Liste des formations (paginée, avec filtres optionnels).
      *
      * @OA\Get(path="/formations", tags={"Formations"}, summary="Liste des formations", security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(name="id_formateur", in="query", description="Filtrer par formateur", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="id_categorie", in="query", description="Filtrer par catégorie", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="statut", in="query", description="Filtrer par statut", @OA\Schema(type="string", enum={"En Cours","Terminé"})),
      *     @OA\Parameter(name="page", in="query", description="Numéro de page (défaut: 1)", @OA\Schema(type="integer", default=1)),
      *     @OA\Parameter(name="per_page", in="query", description="Nombre par page (défaut: 15, max: 50)", @OA\Schema(type="integer", default=15)),
+     *
      *     @OA\Response(response="200", description="Liste paginée des formations",
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="formations", type="array", @OA\Items(type="object")),
      *             @OA\Property(property="meta", type="object",
      *                 @OA\Property(property="current_page", type="integer", example=1),
@@ -71,8 +73,8 @@ class FormationController extends Controller
         if ($request->filled('recherche')) {
             $term = $request->recherche;
             $query->where(function ($q) use ($term) {
-                $q->where('nom', 'like', '%' . $term . '%')
-                    ->orWhere('description', 'like', '%' . $term . '%');
+                $q->where('nom', 'like', '%'.$term.'%')
+                    ->orWhere('description', 'like', '%'.$term.'%');
             });
         }
 
@@ -92,23 +94,17 @@ class FormationController extends Controller
     }
 
     /**
-     * Détail d'une formation. Incrémente le nombre de vues à chaque consultation.
+     * Détail d'une formation (catalogue, page formation).
      */
     public function show(int $id): JsonResponse
     {
-        $formation = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle', 'modules'])
+        $formation = Formation::with(['formateur:id,nom,prenom', 'categorie:id,libelle'])
             ->withCount('inscriptions')
             ->find($id);
 
         if (! $formation) {
             return response()->json(['message' => 'Formation introuvable'], 404);
         }
-
-        $formation->increment('nombre_de_vues');
-        $formation->refresh();
-        $formation->loadCount('inscriptions');
-
-        app(ActivityLogService::class)->logCourseView(auth()->id(), (int) $id);
 
         return response()->json(['formation' => $formation]);
     }
@@ -119,9 +115,13 @@ class FormationController extends Controller
      * L'id_formateur est récupéré via l'utilisateur authentifié ; ne jamais l'envoyer depuis le front.
      *
      * @OA\Post(path="/formations", tags={"Formations"}, summary="Créer une formation", security={{"bearerAuth":{}}},
+     *
      *     @OA\RequestBody(required=true,
+     *
      *         @OA\MediaType(mediaType="application/json",
+     *
      *             @OA\Schema(required={"title","description","price","duration","level"},
+     *
      *                 @OA\Property(property="title", type="string", maxLength=200, example="Introduction à React"),
      *                 @OA\Property(property="description", type="string", maxLength=2000, example="Apprenez les bases de React."),
      *                 @OA\Property(property="price", type="number", minimum=0, example=199.99),
@@ -130,8 +130,11 @@ class FormationController extends Controller
      *                 @OA\Property(property="id_categorie", type="integer", nullable=true, description="Optionnel ; si absent, première catégorie utilisée")
      *             )
      *         ),
+     *
      *         @OA\MediaType(mediaType="multipart/form-data",
+     *
      *             @OA\Schema(required={"title","description","price","duration","level"},
+     *
      *                 @OA\Property(property="title", type="string", maxLength=200),
      *                 @OA\Property(property="description", type="string", maxLength=2000),
      *                 @OA\Property(property="price", type="number", minimum=0),
@@ -142,6 +145,7 @@ class FormationController extends Controller
      *             )
      *         )
      *     ),
+     *
      *     @OA\Response(response="201", description="Formation créée avec succès"),
      *     @OA\Response(response="401", description="Token absent"),
      *     @OA\Response(response="403", description="Token invalide ou accès réservé aux formateurs"),
@@ -171,34 +175,18 @@ class FormationController extends Controller
             $file = $request->file('image');
             $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
             $path = $file->storeAs('formations', $filename, 'public');
-            $data['image_url'] = '/storage/' . $path;
+            $data['image_url'] = '/storage/'.$path;
         }
 
         $formation = Formation::create($data);
 
-        for ($ordre = 1; $ordre <= 3; $ordre++) {
-            Module::create([
-                'formation_id' => $formation->id,
-                'titre' => 'Module ' . $ordre . ' – À compléter',
-                'contenu' => '',
-                'type_contenu' => 'texte',
-                'ordre' => $ordre,
-            ]);
-        }
-
-        $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle', 'modules']);
+        $formation->load(['formateur:id,nom,prenom', 'categorie:id,libelle']);
 
         app(ActivityLogService::class)->logCourseCreation($formation->id, (int) $request->user()->id);
 
         return response()->json([
             'message' => 'Formation créée avec succès',
-            'formation' => array_merge($formation->toArray(), [
-                'title' => $formation->nom,
-                'description' => $formation->description,
-                'price' => (float) $formation->prix,
-                'duration' => (float) $formation->duree_heures,
-                'level' => $formation->level,
-            ]),
+            'formation' => $this->formationPourReponseApi($formation),
         ], 201);
     }
 
@@ -207,9 +195,13 @@ class FormationController extends Controller
      * Réponse alignée sur store : formation avec title, description, price, duration, level.
      *
      * @OA\Put(path="/formations/{id}", tags={"Formations"}, summary="Modifier une formation", security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\RequestBody(
+     *
      *         @OA\JsonContent(
+     *
      *             @OA\Property(property="id_categorie", type="integer"),
      *             @OA\Property(property="nom", type="string"),
      *             @OA\Property(property="description", type="string", maxLength=2000),
@@ -219,20 +211,15 @@ class FormationController extends Controller
      *             @OA\Property(property="statut", type="string", enum={"En Cours","Terminé"})
      *         )
      *     ),
+     *
      *     @OA\Response(response="200", description="Formation mise à jour (réponse enrichie comme store)"),
      *     @OA\Response(response="403", description="Formation appartenant à un autre formateur"),
      *     @OA\Response(response="404", description="Formation introuvable"),
      *     @OA\Response(response="422", description="Erreur de validation")
      * )
      */
-    public function update(UpdateFormationRequest $request, int $id): JsonResponse
+    public function update(UpdateFormationRequest $request, Formation $formation): JsonResponse
     {
-        $formation = Formation::find($id);
-
-        if (! $formation) {
-            return response()->json(['message' => 'Formation introuvable'], 404);
-        }
-
         if ($formation->id_formateur !== (int) $request->user()->id) {
             return response()->json([
                 'message' => 'Vous ne pouvez modifier que vos propres formations.',
@@ -247,10 +234,7 @@ class FormationController extends Controller
 
             // Si nouvelle image : suppression de l'ancienne puis enregistrement de la nouvelle
             if ($request->hasFile('image')) {
-                $oldPath = self::imageUrlToStoragePath($formation->image_url);
-                if ($oldPath && Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
-                }
+                self::deleteStoredImageFile($formation->getRawOriginal('image_url'));
 
                 $file = $request->file('image');
                 $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
@@ -263,7 +247,7 @@ class FormationController extends Controller
 
             $newValues = $formation->only(['nom', 'description', 'level', 'statut', 'duree_heures', 'prix']);
             app(ActivityLogService::class)->logCourseUpdate(
-                (int) $id,
+                (int) $formation->id,
                 (int) $request->user()->id,
                 $oldValues,
                 $newValues
@@ -271,13 +255,7 @@ class FormationController extends Controller
 
             return response()->json([
                 'message' => 'Formation mise à jour',
-                'formation' => array_merge($formation->toArray(), [
-                    'title' => $formation->nom,
-                    'description' => $formation->description,
-                    'price' => (float) $formation->prix,
-                    'duration' => (float) $formation->duree_heures,
-                    'level' => $formation->level,
-                ]),
+                'formation' => $this->formationPourReponseApi($formation),
             ]);
         } catch (Exception $e) {
             return response()->json([
@@ -290,21 +268,16 @@ class FormationController extends Controller
      * Supprimer une formation.
      *
      * @OA\Delete(path="/formations/{id}", tags={"Formations"}, summary="Supprimer une formation", security={{"bearerAuth":{}}},
+     *
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *
      *     @OA\Response(response="200", description="Formation supprimée"),
      *     @OA\Response(response="403", description="Formation appartenant à un autre formateur"),
      *     @OA\Response(response="404", description="Formation introuvable")
      * )
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(Formation $formation): JsonResponse
     {
-        $formation = Formation::find($id);
-
-        if (! $formation) {
-            return response()->json(['message' => 'Formation introuvable'], 404);
-        }
-
-        // Vérification : seul le formateur propriétaire peut supprimer
         if ($formation->id_formateur !== (int) auth()->id()) {
             return response()->json([
                 'message' => 'Vous ne pouvez supprimer que vos propres formations.',
@@ -315,10 +288,7 @@ class FormationController extends Controller
             $formationId = $formation->id;
             $userId = (int) auth()->id();
 
-            $imagePath = self::imageUrlToStoragePath($formation->image_url);
-            if ($imagePath && Storage::disk('public')->exists($imagePath)) {
-                Storage::disk('public')->delete($imagePath);
-            }
+            self::deleteStoredImageFile($formation->getRawOriginal('image_url'));
 
             $formation->delete();
 
@@ -333,12 +303,41 @@ class FormationController extends Controller
     }
 
     /**
+     * Réponse JSON alignée avec le front : champs title, price, duration en plus des colonnes BDD.
+     *
+     * @return array<string, mixed>
+     */
+    private function formationPourReponseApi(Formation $formation): array
+    {
+        return array_merge($formation->toArray(), [
+            'title' => $formation->nom,
+            'description' => $formation->description,
+            'price' => (float) $formation->prix,
+            'duration' => (float) $formation->duree_heures,
+            'level' => $formation->level,
+        ]);
+    }
+
+    /** Supprime le fichier image sur le disque public (valeur telle qu’en BDD, pas l’URL JSON de l’accessor). */
+    private static function deleteStoredImageFile(?string $rawImageUrlFromDb): void
+    {
+        $path = self::imageUrlToStoragePath($rawImageUrlFromDb);
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+
+    /**
      * Convertit une image_url (ex: /storage/formations/xxx.jpg) en chemin de stockage (formations/xxx.jpg).
      */
     private static function imageUrlToStoragePath(?string $imageUrl): ?string
     {
         if (! $imageUrl) {
             return null;
+        }
+        if (str_starts_with($imageUrl, 'http://') || str_starts_with($imageUrl, 'https://')) {
+            $path = parse_url($imageUrl, PHP_URL_PATH);
+            $imageUrl = is_string($path) ? $path : '';
         }
         $imageUrl = ltrim($imageUrl, '/');
         if (str_starts_with($imageUrl, 'storage/')) {

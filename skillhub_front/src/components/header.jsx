@@ -1,6 +1,7 @@
 // Barre du haut : logo, liens Dashboard / Mes Ateliers / Gestion, bouton Déconnexion.
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "../api/auth";
+import logoSkillhub from "../assets/logo/sk.png";
 import "./css/header.css";
 
 function Header() {
@@ -24,8 +25,8 @@ function Header() {
         <nav className="navbar navbar-expand-lg navbar-dark" aria-label="Navigation principale">
           <div className="container">
             {/* Logo : redirige vers dashboard (formateur) ou Mes Ateliers selon le rôle */}
-            <Link className="navbar-brand" to={estFormateur ? "/dashboard/formateur" : "/dashboard/apprenant"}>
-              SkillHub
+            <Link className="navbar-brand d-flex align-items-center" to={estFormateur ? "/dashboard/formateur" : "/dashboard/apprenant"}>
+              <img src={logoSkillhub} alt="SkillHub" className="header-logo-img" width={140} height={42} />
             </Link>
             <button
               className="navbar-toggler"
@@ -46,12 +47,12 @@ function Header() {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/Mes_Ateliers">
+                  <Link className="nav-link" to="/mes-formations">
                     Mes formations
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/Gestion_Ateliers">
+                  <Link className="nav-link" to="/gestion-formations">
                     Gestion d&apos;Ateliers
                   </Link>
                 </li>

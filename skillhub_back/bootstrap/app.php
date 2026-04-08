@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'formateur' => \App\Http\Middleware\VerifierFormateur::class,
+            'apprenant' => \App\Http\Middleware\VerifierApprenant::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 } elseif (str_contains($message, 'not provided')) {
                     $message = 'Token manquant.';
                 }
+
                 return response()->json(['message' => $message], 401);
             }
         });
@@ -85,9 +87,11 @@ return Application::configure(basePath: dirname(__DIR__))
                     $message = str_contains(strtolower($e->getMessage()), 'not provided')
                         ? 'Token manquant.'
                         : 'Token invalide ou expiré. Veuillez vous reconnecter.';
+
                     return response()->json(['message' => $message], 401);
                 }
                 $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+
                 return response()->json([
                     'message' => config('app.debug') ? $e->getMessage() : 'Une erreur inattendue est survenue.',
                 ], $status);

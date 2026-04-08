@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import NavbarPublic from "../components/NavbarPublic";
-import Footer from "../components/Footer";
-import { formationsApi, formatFormationForDisplay, getImageUrl } from "../api/formations";
-import { inscriptionsApi } from "../api/inscriptions";
-import { authApi } from "../api/auth";
-import { IMG_PLACEHOLDER } from "../constants";
+import NavbarPublic from "../../components/NavbarPublic";
+import Footer from "../../components/Footer";
+import { formationsApi, formatFormationForDisplay } from "../../api/formations";
+import { inscriptionsApi } from "../../api/inscriptions";
+import { authApi } from "../../api/auth";
+import FormationImage from "../../components/FormationImage";
 import "./css/formation-detail.css";
 
 const LEVEL_LABELS = { beginner: "Débutant", intermediate: "Intermédiaire", advanced: "Avancé" };
@@ -67,7 +67,6 @@ export default function FormationDetail() {
     );
   }
 
-  const modules = formation.modules || [];
   const niveauLabel = LEVEL_LABELS[formation.level] || formation.levelLabel || formation.level;
 
   return (
@@ -77,7 +76,7 @@ export default function FormationDetail() {
         <div className="container-detail">
           <div className="detail-header">
             <div className="detail-image">
-              <img src={getImageUrl(formation.image_url) || IMG_PLACEHOLDER} alt="" />
+              <FormationImage imageUrl={formation.image_url} alt="" />
             </div>
             <div className="detail-infos">
               <h1>{formation.nom || formation.title}</h1>
@@ -87,7 +86,6 @@ export default function FormationDetail() {
                 <span>Catégorie : {formation.domaine || formation.categorie?.libelle || "—"}</span>
                 <span>Formateur : {formation.formateur || "—"}</span>
                 <span>{formation.inscriptions_count ?? 0} apprenant(s)</span>
-                <span>{formation.nombre_de_vues ?? 0} vues</span>
               </div>
               <div className="detail-actions">
                 {user?.role === "participant" && (
@@ -119,21 +117,6 @@ export default function FormationDetail() {
               </div>
             </div>
           </div>
-
-          <section className="detail-modules">
-            <h2>Modules</h2>
-            {modules.length === 0 ? (
-              <p className="text-muted">Aucun module pour le moment.</p>
-            ) : (
-              <ul className="liste-modules">
-                {modules.map((mod, i) => (
-                  <li key={mod.id}>
-                    <strong>Module {mod.ordre ?? i + 1}</strong> – {mod.titre}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
         </div>
       </main>
       <Footer />

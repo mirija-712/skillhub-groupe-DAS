@@ -3,8 +3,16 @@
 /* Conteneur principal */
 .tableau-bord-principal {
   min-height: calc(100vh - 70px);
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 2rem 0 3rem;
+  background-color: #f5f7fa;
+  background-image: linear-gradient(
+      rgba(245, 247, 250, 0.9),
+      rgba(195, 207, 226, 0.88)
+    ),
+    url("../../../assets/utilis/espace-formateur.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 .conteneur-accueil {

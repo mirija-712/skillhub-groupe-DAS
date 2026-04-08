@@ -3,9 +3,9 @@
  */
 import { memo } from "react";
 import "./css/carte_atelier.css";
-import formation from "../assets/logo/icons8-less-or-equal-100.png";
-import done from "../assets/logo/icons8-done-94.png";
-import time from "../assets/logo/icons8-time-100.png";
+import formation from "../assets/style/icons8-less-or-equal-100.png";
+import done from "../assets/style/icons8-done-94.png";
+import time from "../assets/style/icons8-time-100.png";
 
 function Carte_Atelier({ atelier }) {
   return (
