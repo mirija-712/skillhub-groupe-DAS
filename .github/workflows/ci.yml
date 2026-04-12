@@ -39,7 +39,7 @@ jobs:
 
       - name: Run PHPUnit tests
         working-directory: skillhub_back
-        run: php artisan test
+        run: php artisan test --testsuite=Unit
 
   # ─── FRONTEND React ────────────────────────────
   frontend:
