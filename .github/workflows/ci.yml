@@ -29,6 +29,14 @@ jobs:
         working-directory: skillhub_back
         run: composer install
 
+      - name: Copy .env
+        working-directory: skillhub_back
+        run: cp .env.example .env
+
+      - name: Generate APP_KEY
+        working-directory: skillhub_back
+        run: php artisan key:generate
+
       - name: Run PHPUnit tests
         working-directory: skillhub_back
         run: php artisan test
