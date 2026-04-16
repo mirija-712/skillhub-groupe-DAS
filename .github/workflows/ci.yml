@@ -33,7 +33,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
-          extensions: mbstring, xml, pdo_sqlite, sqlite3, bcmath, intl
+          # mongodb/mongodb (composer) exige ext-mongodb — sans elle, composer install échoue en CI
+          extensions: mbstring, xml, pdo_sqlite, sqlite3, bcmath, intl, openssl, zip, mongodb
           coverage: none
 
       - name: Install Composer dependencies
