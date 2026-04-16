@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'formateur' => \App\Http\Middleware\VerifierFormateur::class,
             'apprenant' => \App\Http\Middleware\VerifierApprenant::class,
         ]);
+        // Evite la redirection vers une route "login" inexistante sur les routes API protégées.
+        $middleware->redirectGuestsTo(function (Request $request) {
+            return $request->is('api/*') ? null : '/login';
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Pour les routes api/* on renvoie toujours du JSON (le front attend du JSON)
@@ -45,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 401 : non authentifié (token manquant ou invalide)
         $exceptions->renderable(function (AuthenticationException $e, Request $request) {
-            if ($request->is('api/*') && $request->expectsJson()) {
+            if ($request->is('api/*')) {
                 return response()->json(['message' => 'Token manquant ou invalide. Veuillez vous reconnecter.'], 401);
             }
         });

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="D:\tp\skillhub-groupe-DAS\skillhub_back\phpunit.xml" tests="15" assertions="27" errors="0" failures="0" skipped="0" time="3.985419">
+    <testsuite name="Unit" tests="7" assertions="8" errors="0" failures="0" skipped="0" time="0.042425">
+      <testsuite name="Tests\Unit\UtilisateurTest" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" tests="7" assertions="8" errors="0" failures="0" skipped="0" time="0.042425">
+        <testcase name="test_role_formateur_est_valide" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="12" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="1" time="0.015793"/>
+        <testcase name="test_role_participant_est_valide" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="21" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="1" time="0.000881"/>
+        <testcase name="test_role_invalide_est_rejete" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="30" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="1" time="0.003508"/>
+        <testcase name="test_email_valide" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="39" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="1" time="0.003513"/>
+        <testcase name="test_email_invalide" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="48" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="1" time="0.004593"/>
+        <testcase name="test_mot_de_passe_longueur_minimale" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="57" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="2" time="0.011348"/>
+        <testcase name="test_mot_de_passe_trop_court" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Unit\UtilisateurTest.php" line="66" class="Tests\Unit\UtilisateurTest" classname="Tests.Unit.UtilisateurTest" assertions="1" time="0.002789"/>
+      </testsuite>
+    </testsuite>
+    <testsuite name="Feature" tests="8" assertions="19" errors="0" failures="0" skipped="0" time="3.942994">
+      <testsuite name="Tests\Feature\AuthTest" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\AuthTest.php" tests="4" assertions="11" errors="0" failures="0" skipped="0" time="3.151502">
+        <testcase name="test_login_with_valid_credentials_returns_token" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\AuthTest.php" line="13" class="Tests\Feature\AuthTest" classname="Tests.Feature.AuthTest" assertions="7" time="2.087162"/>
+        <testcase name="test_login_with_invalid_credentials_returns_401" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\AuthTest.php" line="27" class="Tests\Feature\AuthTest" classname="Tests.Feature.AuthTest" assertions="1" time="0.103900"/>
+        <testcase name="test_apprenant_can_login" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\AuthTest.php" line="39" class="Tests\Feature\AuthTest" classname="Tests.Feature.AuthTest" assertions="2" time="0.194321"/>
+        <testcase name="test_protected_route_without_token_returns_401" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\AuthTest.php" line="52" class="Tests\Feature\AuthTest" classname="Tests.Feature.AuthTest" assertions="1" time="0.766119"/>
+      </testsuite>
+      <testsuite name="Tests\Feature\FormationControllerTest" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\FormationControllerTest.php" tests="4" assertions="8" errors="0" failures="0" skipped="0" time="0.791493">
+        <testcase name="test_post_formation_without_token_returns_401" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\FormationControllerTest.php" line="31" class="Tests\Feature\FormationControllerTest" classname="Tests.Feature.FormationControllerTest" assertions="1" time="0.203394"/>
+        <testcase name="test_post_formation_with_valid_user_returns_201" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\FormationControllerTest.php" line="47" class="Tests\Feature\FormationControllerTest" classname="Tests.Feature.FormationControllerTest" assertions="3" time="0.211038"/>
+        <testcase name="test_apprenant_cannot_create_formation" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\FormationControllerTest.php" line="79" class="Tests\Feature\FormationControllerTest" classname="Tests.Feature.FormationControllerTest" assertions="2" time="0.128685"/>
+        <testcase name="test_formateur_cannot_update_another_formateur_formation" file="D:\tp\skillhub-groupe-DAS\skillhub_back\tests\Feature\FormationControllerTest.php" line="100" class="Tests\Feature\FormationControllerTest" classname="Tests.Feature.FormationControllerTest" assertions="2" time="0.248376"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>
