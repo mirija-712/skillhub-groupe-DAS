@@ -22,8 +22,10 @@ services:
     volumes:
       - ./skillhub_back/storage:/var/www/html/storage
     depends_on:
-      - mysql
-      - mongo
+      mysql:
+        condition: service_healthy
+      mongo:
+        condition: service_started
 
   mysql:
     image: mysql:8.0
@@ -33,10 +35,18 @@ services:
       MYSQL_USER: skillhub
       MYSQL_PASSWORD: skillhubpass
       MYSQL_ROOT_PASSWORD: rootpass
+    # Hôte → conteneur 3306 : port hôte rare pour limiter les conflits (3306/3307 souvent pris).
+    # Depuis Windows : localhost:13306. L’API dans Docker utilise toujours mysql:3306.
     ports:
-      - "3306:3306"
+      - "13306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   mongo:
     image: mongo:7.0
