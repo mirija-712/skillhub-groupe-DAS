@@ -4,8 +4,11 @@ npm-debug.log
 yarn-error.log
 .env
 .env.*
+!.env.example
 /storage
 /database/database.sqlite
 /tests
+/bootstrap/cache/*.php
+!/bootstrap/cache/.gitignore
 /.github
 .DS_Store
