@@ -31,5 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- JWT (tymon/jwt-auth) : requis pour auth('api')->login() dans les tests Feature -->
+        <env name="JWT_SECRET" value="phpunit-test-jwt-secret-do-not-use-in-production-min-32-chars"/>
     </php>
 </phpunit>
