@@ -2,70 +2,72 @@
 
 namespace Tests\Unit;
 
+use App\Models\Utilisateur;
 use PHPUnit\Framework\TestCase;
 
 class UtilisateurTest extends TestCase
 {
-    /**
-     * Vérifie que le rôle formateur est bien reconnu
-     */
-    public function test_role_formateur_est_valide(): void
+    public function test_formateur_role_helpers_return_expected_values(): void
     {
-        $rolesValides = ['formateur', 'participant', 'admin'];
-        $this->assertContains('formateur', $rolesValides);
+        $user = new Utilisateur([
+            'email' => 'formateur@skillhub.fr',
+            'nom' => 'Test',
+            'prenom' => 'User',
+            'role' => 'formateur',
+        ]);
+
+        $this->assertTrue($user->isFormateur());
+        $this->assertFalse($user->isApprenant());
     }
 
-    /**
-     * Vérifie que le rôle participant est bien reconnu
-     */
-    public function test_role_participant_est_valide(): void
+    public function test_participant_role_helpers_return_expected_values(): void
     {
-        $rolesValides = ['formateur', 'participant', 'admin'];
-        $this->assertContains('participant', $rolesValides);
+        $user = new Utilisateur([
+            'email' => 'participant@skillhub.fr',
+            'nom' => 'Test',
+            'prenom' => 'User',
+            'role' => 'participant',
+        ]);
+
+        $this->assertTrue($user->isApprenant());
+        $this->assertFalse($user->isFormateur());
     }
 
-    /**
-     * Vérifie qu'un rôle invalide n'est pas accepté
-     */
-    public function test_role_invalide_est_rejete(): void
+    public function test_jwt_custom_claims_include_email_and_role(): void
     {
-        $rolesValides = ['formateur', 'participant', 'admin'];
-        $this->assertNotContains('inconnu', $rolesValides);
+        $user = new Utilisateur([
+            'email' => 'formateur@skillhub.fr',
+            'role' => 'formateur',
+        ]);
+
+        $this->assertSame([
+            'email' => 'formateur@skillhub.fr',
+            'role' => 'formateur',
+        ], $user->getJWTCustomClaims());
     }
 
-    /**
-     * Vérifie le format d'un email valide
-     */
-    public function test_email_valide(): void
+    public function test_get_auth_password_uses_mot_de_passe_attribute(): void
     {
-        $email = 'formateur@skillhub.fr';
-        $this->assertTrue(filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
+        $user = new Utilisateur();
+        $user->setRawAttributes([
+            'mot_de_passe' => 'hashed-secret-value',
+        ]);
+
+        $this->assertSame('hashed-secret-value', $user->getAuthPassword());
     }
 
-    /**
-     * Vérifie qu'un email invalide est rejeté
-     */
-    public function test_email_invalide(): void
+    public function test_mot_de_passe_is_hidden_from_serialized_output(): void
     {
-        $email = 'pas-un-email';
-        $this->assertFalse(filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
-    }
+        $user = new Utilisateur([
+            'email' => 'hidden@skillhub.fr',
+            'nom' => 'Hidden',
+            'prenom' => 'User',
+            'role' => 'participant',
+        ]);
+        $user->setRawAttributes(array_merge($user->getAttributes(), [
+            'mot_de_passe' => 'secret-value',
+        ]));
 
-    /**
-     * Vérifie que le mot de passe respecte la longueur minimale
-     */
-    public function test_mot_de_passe_longueur_minimale(): void
-    {
-        $motDePasse = 'password123';
-        $this->assertGreaterThanOrEqual(8, strlen($motDePasse));
-    }
-
-    /**
-     * Vérifie qu'un mot de passe trop court est refusé
-     */
-    public function test_mot_de_passe_trop_court(): void
-    {
-        $motDePasse = '123';
-        $this->assertLessThan(8, strlen($motDePasse));
+        $this->assertArrayNotHasKey('mot_de_passe', $user->toArray());
     }
 }
