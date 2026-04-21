@@ -14,11 +14,14 @@ use Illuminate\Http\Request;
 
 class ModuleController extends Controller
 {
+    private const MSG_FORMATION_INTROUVABLE = 'Formation introuvable';
+    private const MSG_UNAUTHORIZED_FORMATEUR = 'Vous ne pouvez gérer que vos propres formations.';
+
     public function index(Request $request, int $formationId): JsonResponse
     {
         $formation = Formation::find($formationId);
         if (! $formation) {
-            return response()->json(['message' => 'Formation introuvable'], 404);
+            return response()->json(['message' => self::MSG_FORMATION_INTROUVABLE], 404);
         }
 
         $modules = FormationModule::where('formation_id', $formationId)
@@ -78,11 +81,11 @@ class ModuleController extends Controller
     {
         $formation = Formation::find($formationId);
         if (! $formation) {
-            return response()->json(['message' => 'Formation introuvable'], 404);
+            return response()->json(['message' => self::MSG_FORMATION_INTROUVABLE], 404);
         }
 
         if ($formation->id_formateur !== (int) $request->user()->id) {
-            return response()->json(['message' => 'Vous ne pouvez gérer que vos propres formations.'], 403);
+            return response()->json(['message' => self::MSG_UNAUTHORIZED_FORMATEUR], 403);
         }
 
         $data = $request->validated();
@@ -104,11 +107,11 @@ class ModuleController extends Controller
     {
         $formation = Formation::find($module->formation_id);
         if (! $formation) {
-            return response()->json(['message' => 'Formation introuvable'], 404);
+            return response()->json(['message' => self::MSG_FORMATION_INTROUVABLE], 404);
         }
 
         if ($formation->id_formateur !== (int) $request->user()->id) {
-            return response()->json(['message' => 'Vous ne pouvez gérer que vos propres formations.'], 403);
+            return response()->json(['message' => self::MSG_UNAUTHORIZED_FORMATEUR], 403);
         }
 
         $module->update($request->validated());
@@ -123,11 +126,11 @@ class ModuleController extends Controller
     {
         $formation = Formation::find($module->formation_id);
         if (! $formation) {
-            return response()->json(['message' => 'Formation introuvable'], 404);
+            return response()->json(['message' => self::MSG_FORMATION_INTROUVABLE], 404);
         }
 
         if ($formation->id_formateur !== (int) auth()->id()) {
-            return response()->json(['message' => 'Vous ne pouvez gérer que vos propres formations.'], 403);
+            return response()->json(['message' => self::MSG_UNAUTHORIZED_FORMATEUR], 403);
         }
 
         $module->delete();

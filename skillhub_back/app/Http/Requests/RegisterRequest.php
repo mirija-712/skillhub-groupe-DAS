@@ -37,18 +37,7 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => "L'email est requis.",
-            'email.email' => "L'email n'est pas valide.",
             'email.unique' => 'Cet email est déjà utilisé.',
-            'mot_de_passe.required' => 'Le mot de passe est requis.',
-            'mot_de_passe.string' => 'Le mot de passe doit être une chaîne de caractères.',
-            'mot_de_passe.min' => 'Le mot de passe doit contenir au moins :min caractères.',
-            'nom.required' => 'Le nom est requis.',
-            'nom.string' => 'Le nom doit être une chaîne de caractères.',
-            'nom.max' => 'Le nom ne peut pas dépasser :max caractères.',
-            'prenom.string' => 'Le prénom doit être une chaîne de caractères.',
-            'prenom.max' => 'Le prénom ne peut pas dépasser :max caractères.',
-            'role.required' => 'Le rôle est requis.',
             'role.in' => 'Le rôle doit être Apprenant ou Formateur.',
         ];
     }
