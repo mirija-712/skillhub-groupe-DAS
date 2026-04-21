@@ -55,4 +55,59 @@ class AuthTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_register_with_valid_data_returns_201(): void
+    {
+        $response = $this->postJson('/api/auth/inscription', [
+            'email' => 'nouveau@test.com',
+            'mot_de_passe' => 'password123',
+            'nom' => 'Dupont',
+            'prenom' => 'Marie',
+            'role' => 'participant',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson(['message' => 'Utilisateur créé avec succès. Vous pouvez maintenant vous connecter.']);
+
+        $this->assertDatabaseHas('utilisateurs', ['email' => 'nouveau@test.com']);
+    }
+
+    public function test_register_with_duplicate_email_returns_422(): void
+    {
+        Utilisateur::factory()->create(['email' => 'existant@test.com']);
+
+        $response = $this->postJson('/api/auth/inscription', [
+            'email' => 'existant@test.com',
+            'mot_de_passe' => 'password123',
+            'nom' => 'Test',
+            'role' => 'participant',
+        ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_me_with_valid_token_returns_user(): void
+    {
+        $user = Utilisateur::factory()->formateur()->create(['email' => 'me@test.com']);
+        $token = auth('api')->login($user);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/auth/me');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['utilisateur' => ['id', 'email', 'role']])
+            ->assertJson(['utilisateur' => ['email' => 'me@test.com']]);
+    }
+
+    public function test_logout_with_valid_token_returns_200(): void
+    {
+        $user = Utilisateur::factory()->participant()->create();
+        $token = auth('api')->login($user);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/auth/deconnexion');
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Déconnexion réussie']);
+    }
 }
