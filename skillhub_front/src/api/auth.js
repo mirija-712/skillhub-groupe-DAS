@@ -1,7 +1,7 @@
 // ========== auth.js : tout ce qui touche à l'authentification ==========
 // Inscription, connexion, déconnexion, et stockage du token + infos utilisateur dans localStorage.
 
-import { parseJsonResponse } from "./utils";
+import { parseJsonResponse, ApiError } from "./utils";
 import { API_URL } from "../constants";
 
 export const authApi = {
@@ -13,7 +13,7 @@ export const authApi = {
       body: JSON.stringify(data),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 
@@ -25,7 +25,7 @@ export const authApi = {
       body: JSON.stringify(data),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 
@@ -53,7 +53,7 @@ export const authApi = {
       },
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 

@@ -2,6 +2,20 @@
 // On centralise ici le parse des réponses et les messages d'erreur pour ne pas se répéter partout.
 
 /**
+ * Erreur HTTP typée. Remplace les throw d'objets littéraux (règle qualité SonarCloud S3696).
+ * Hérite d'Error pour être reconnu par les outils de débogage et les catch blocks.
+ */
+export class ApiError extends Error {
+  constructor(status, data = {}) {
+    super(data.message || "Erreur API");
+    this.name = "ApiError";
+    this.status = status;
+    this.erreurs = data.erreurs ?? data.errors ?? null;
+    this.errors = data.errors ?? null;
+  }
+}
+
+/**
  * Parse le corps de la réponse en JSON.
  * On lit d'abord en texte pour éviter que response.json() plante si le serveur renvoie du HTML (ex. erreur 500).
  * Si le parse échoue, on retourne un objet avec un message pour que l'UI puisse quand même afficher une erreur.

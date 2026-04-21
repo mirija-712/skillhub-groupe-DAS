@@ -1,4 +1,4 @@
-import { parseJsonResponse } from "./utils";
+import { parseJsonResponse, ApiError } from "./utils";
 import { API_URL } from "../constants";
 
 function getAuthHeaders() {
@@ -13,7 +13,7 @@ export const inscriptionsApi = {
   async getFormationsSuivies() {
     const res = await fetch(`${API_URL}/apprenant/formations`, { headers: getAuthHeaders() });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.formations ?? [];
   },
 
@@ -23,7 +23,7 @@ export const inscriptionsApi = {
       headers: getAuthHeaders(),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 
@@ -33,7 +33,7 @@ export const inscriptionsApi = {
       headers: getAuthHeaders(),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 
@@ -44,7 +44,7 @@ export const inscriptionsApi = {
       body: JSON.stringify({ progression }),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 };
