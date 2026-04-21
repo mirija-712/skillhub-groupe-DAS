@@ -1,6 +1,6 @@
 // Appels API formations + catégories (JWT dans les headers quand il y a un token).
 
-import { parseJsonResponse } from "./utils";
+import { parseJsonResponse, ApiError } from "./utils";
 import { API_ORIGIN, API_URL } from "../constants";
 
 /** URL du serveur Laravel (sans /api), pour les images /storage — ex. http://localhost:8000 */
@@ -54,7 +54,7 @@ export const formationsApi = {
     const url = `${API_URL}/formations${qs ? `?${qs}` : ""}`;
     const res = await fetch(url, { headers: getAuthHeaders() });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return { formations: json.formations ?? [], meta: json.meta ?? null };
   },
 
@@ -63,14 +63,14 @@ export const formationsApi = {
     const url = `${API_URL}/formations${qs ? `?${qs}` : ""}`;
     const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return { formations: json.formations ?? [], meta: json.meta ?? null };
   },
 
   async getFormation(id) {
     const res = await fetch(`${API_URL}/formations/${id}`, { headers: getAuthHeaders() });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.formation;
   },
 
@@ -79,7 +79,7 @@ export const formationsApi = {
       headers: getAuthHeaders(),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.modules ?? [];
   },
 
@@ -90,7 +90,7 @@ export const formationsApi = {
       body: JSON.stringify(data),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.module;
   },
 
@@ -101,7 +101,7 @@ export const formationsApi = {
       body: JSON.stringify(data),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.module;
   },
 
@@ -111,7 +111,7 @@ export const formationsApi = {
       headers: getAuthHeaders(),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 
@@ -122,7 +122,7 @@ export const formationsApi = {
       body: JSON.stringify({ est_fait: !!estFait }),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return { module: json.module, progression: json.progression };
   },
 
@@ -134,7 +134,7 @@ export const formationsApi = {
       body: isFormData ? data : JSON.stringify(data),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.formation;
   },
 
@@ -146,7 +146,7 @@ export const formationsApi = {
       body: isFormData ? data : JSON.stringify(data),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.formation;
   },
 
@@ -156,14 +156,14 @@ export const formationsApi = {
       headers: getAuthHeaders(),
     });
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json;
   },
 
   async getCategories() {
     const res = await fetch(`${API_URL}/categories`);
     const json = await parseJsonResponse(res);
-    if (!res.ok) throw { status: res.status, ...json };
+    if (!res.ok) throw new ApiError(res.status, json);
     return json.categories;
   },
 };
