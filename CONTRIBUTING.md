@@ -5,8 +5,8 @@
 | Membre        | Rôle principal          | Responsabilités                                                         |
 | ------------- | ----------------------- | ----------------------------------------------------------------------- |
 | Dayan         | DevOps Engineer         | Docker, conteneurisation, docker-compose.yml, .env.example              |
-| Steve/Allanah | Tech Lead + Tests       | Tests unitaires back-end, CI/CD, Git, README, sécurité, coordination    |
-| Steve/Allanah | Tests + Cloud Architect | Tests unitaires front-end, rapport d'audit, analyse besoins, schémas C4 |
+| Steve         | Tech Lead + Tests       | Tests unitaires back-end, CI/CD, Git, README, sécurité, coordination    |
+| Allanah       | Tests + Cloud Architect | Tests unitaires front-end, rapport d'audit, analyse besoins, schémas C4 |
 
 ---
 
